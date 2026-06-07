@@ -168,38 +168,52 @@ export default function IntroModal({ onDone }: Props) {
                   <label className="text-zinc-400 text-xs font-semibold mb-1.5 block">Type *</label>
                   <div className="flex flex-wrap gap-2">
                     {BIZ_TYPES.map(t => (
-                      <button key={t} onClick={() => set("type", t)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                          form.type === t
-                            ? "bg-[#3b5bdb] border-[#3b5bdb] text-white"
-                            : "bg-[#18181b] border-[#3f3f46] text-zinc-400 hover:border-zinc-500"
-                        }`}>
-                        {t}
-                      </button>
+                      t === "Other" ? (
+                        <div key="Other" className="flex items-center gap-2">
+                          <button onClick={() => set("type", "Other")}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                              form.type === "Other"
+                                ? "bg-[#3b5bdb] border-[#3b5bdb] text-white"
+                                : "bg-[#18181b] border-[#3f3f46] text-zinc-400 hover:border-zinc-500"
+                            }`}>
+                            Other
+                          </button>
+                          {form.type === "Other" && (
+                            <motion.div initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: "auto" }} className="overflow-hidden">
+                              <Input
+                                value={otherType}
+                                onChange={e => setOtherType(e.target.value)}
+                                placeholder="Describe..."
+                                className="h-7 text-xs bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb] w-36"
+                                autoFocus
+                              />
+                            </motion.div>
+                          )}
+                        </div>
+                      ) : (
+                        <button key={t} onClick={() => set("type", t)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                            form.type === t
+                              ? "bg-[#3b5bdb] border-[#3b5bdb] text-white"
+                              : "bg-[#18181b] border-[#3f3f46] text-zinc-400 hover:border-zinc-500"
+                          }`}>
+                          {t}
+                        </button>
+                      )
                     ))}
                   </div>
-                  {form.type === "Other" && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-2 overflow-hidden">
-                      <Input
-                        value={otherType}
-                        onChange={e => setOtherType(e.target.value)}
-                        placeholder="Describe your business type..."
-                        className="bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb]"
-                      />
-                    </motion.div>
-                  )}
                 </div>
 
                 {/* Venue city */}
                 <div className="mb-4">
                   <label className="text-zinc-400 text-xs font-semibold mb-1.5 block">Nearest World Cup venue *</label>
                   <Select value={form.city} onValueChange={(v: string | null) => v && set("city", v)}>
-                    <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white focus:ring-[#3b5bdb]">
+                    <SelectTrigger className="w-full bg-[#18181b] border-[#3f3f46] text-white focus:ring-[#3b5bdb]">
                       <SelectValue placeholder="Select a host city..." />
                     </SelectTrigger>
                     <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white">
                       {HOST_CITIES.map(c => (
-                        <SelectItem key={c} value={c} className="focus:bg-[#3b5bdb]/20 focus:text-white">{c}</SelectItem>
+                        <SelectItem key={c} value={c} className="text-white focus:bg-[#3b5bdb] focus:text-white data-highlighted:bg-[#3b5bdb] data-highlighted:text-white">{c}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -220,7 +234,7 @@ export default function IntroModal({ onDone }: Props) {
                       value={form.capacity}
                       onChange={e => set("capacity", e.target.value)}
                       placeholder="0"
-                      className="text-center bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb]"
+                      className="text-center bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <button onClick={() => adjustCapacity(10)}
                       className="w-9 h-9 rounded-lg border border-[#3f3f46] bg-[#18181b] text-zinc-400 hover:text-white hover:border-zinc-500 flex items-center justify-center transition-all">
