@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Database, Zap, BarChart3, BookMarked, ChevronRight, Minus, Plus } from "lucide-react";
+import { Database, Zap, BarChart3, BookMarked, ChevronRight, Minus, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import WaveLogo from "./WaveLogo";
@@ -19,7 +19,7 @@ const FEATURES = [
   { icon: Database,   label: "Persistent Memory",    desc: "Everything saved to your MongoDB Atlas database" },
 ];
 
-const BIZ_TYPES = ["Restaurant", "Bar", "Retail", "Hotel", "Food Truck", "Other"];
+const BIZ_TYPES = ["Restaurant", "Bar", "Retail", "Hotel", "Food Truck"];
 
 const HOST_CITIES = [
   "East Rutherford, NJ", "Los Angeles, CA", "Dallas, TX",
@@ -46,7 +46,7 @@ export default function IntroModal({ onDone }: Props) {
   const goBack = () => { setDir(-1); setStep(1); };
 
   const set = (k: keyof BusinessProfile, v: string) => setForm(f => ({ ...f, [k]: v }));
-  const effectiveType = form.type === "Other" ? otherType.trim() : form.type;
+  const effectiveType = form.type || otherType.trim();
   const valid = form.name.trim() && effectiveType && form.city;
   const capacity = parseInt(form.capacity || "0");
   const adjustCapacity = (delta: number) => set("capacity", String(Math.max(0, capacity + delta)));
@@ -88,12 +88,6 @@ export default function IntroModal({ onDone }: Props) {
               <div key={s} className={`rounded-full transition-all ${s === step ? "w-4 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/30"}`} />
             ))}
           </div>
-          {step === 1 && (
-            <button onClick={() => onDone({ name: "Guest", type: "Other", city: HOST_CITIES[0], capacity: "" })}
-              className="text-white/40 hover:text-white transition-colors">
-              <X className="w-4 h-4" />
-            </button>
-          )}
         </div>
 
         {/* Animated step body */}
@@ -166,42 +160,24 @@ export default function IntroModal({ onDone }: Props) {
                 {/* Business type */}
                 <div className="mb-4">
                   <label className="text-zinc-400 text-xs font-semibold mb-1.5 block">Type *</label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 mb-2">
                     {BIZ_TYPES.map(t => (
-                      t === "Other" ? (
-                        <div key="Other" className="flex items-center gap-2">
-                          <button onClick={() => set("type", "Other")}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                              form.type === "Other"
-                                ? "bg-[#3b5bdb] border-[#3b5bdb] text-white"
-                                : "bg-[#18181b] border-[#3f3f46] text-zinc-400 hover:border-zinc-500"
-                            }`}>
-                            Other
-                          </button>
-                          {form.type === "Other" && (
-                            <motion.div initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: "auto" }} className="overflow-hidden">
-                              <Input
-                                value={otherType}
-                                onChange={e => setOtherType(e.target.value)}
-                                placeholder="Describe..."
-                                className="h-7 text-xs bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb] w-36"
-                                autoFocus
-                              />
-                            </motion.div>
-                          )}
-                        </div>
-                      ) : (
-                        <button key={t} onClick={() => set("type", t)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                            form.type === t
-                              ? "bg-[#3b5bdb] border-[#3b5bdb] text-white"
-                              : "bg-[#18181b] border-[#3f3f46] text-zinc-400 hover:border-zinc-500"
-                          }`}>
-                          {t}
-                        </button>
-                      )
+                      <button key={t} onClick={() => { set("type", t); setOtherType(""); }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                          form.type === t
+                            ? "bg-[#3b5bdb] border-[#3b5bdb] text-white"
+                            : "bg-[#18181b] border-[#3f3f46] text-zinc-400 hover:border-zinc-500"
+                        }`}>
+                        {t}
+                      </button>
                     ))}
                   </div>
+                  <Input
+                    value={otherType}
+                    onChange={e => { setOtherType(e.target.value); if (e.target.value) set("type", ""); }}
+                    placeholder="Other — please specify..."
+                    className="bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb] focus-visible:ring-1"
+                  />
                 </div>
 
                 {/* Venue city */}
