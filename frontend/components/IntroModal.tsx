@@ -230,7 +230,7 @@ export default function IntroModal({ onDone }: Props) {
                     Back
                   </button>
                   <button
-                    onClick={() => { if (!valid || submitting) return; setSubmitting(true); setTimeout(() => onDone({ ...form, type: effectiveType }), 0); }}
+                    onClick={() => { if (!valid || submitting) return; setSubmitting(true); onDone({ ...form, type: effectiveType }); }}
                     disabled={!valid || submitting}
                     className="flex-1 bg-[#3b5bdb] hover:bg-[#4c6ef5] disabled:opacity-30 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl py-3 transition-colors flex items-center justify-center gap-2">
                     {submitting ? (

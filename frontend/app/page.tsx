@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ChatMessage from "@/components/ChatMessage";
 import TypingIndicator from "@/components/TypingIndicator";
@@ -26,18 +26,44 @@ const buildWelcome = (biz?: BusinessProfile) =>
 interface Message { id: string; role: "user" | "agent"; text: string; }
 
 export default function Home() {
-  const [business, setBusiness]         = useState<BusinessProfile | undefined>();
-  const [messages, setMessages]         = useState<Message[]>([{ id: "w", role: "agent", text: buildWelcome() }]);
+  const savedBiz = typeof window !== "undefined"
+    ? (() => { try { const s = localStorage.getItem("wcbiz_profile"); return s ? JSON.parse(s) as BusinessProfile : undefined; } catch { return undefined; } })()
+    : undefined;
+
+  const [business, setBusiness]         = useState<BusinessProfile | undefined>(savedBiz);
+  const [setupPending, setSetupPending] = useState(false);
+  const [setupDone, setSetupDone]       = useState(false);
+  const [setupMsgIdx, setSetupMsgIdx]   = useState(0);
+
+  const SETUP_MSGS = useMemo(() => [
+    "Saving your business profile...",
+    "Connecting to MongoDB Atlas...",
+    "Loading World Cup match data...",
+    "Personalizing your experience...",
+  ], []);
+
+  useEffect(() => {
+    if (!setupPending) return;
+    const t = setInterval(() => setSetupMsgIdx(i => (i + 1) % SETUP_MSGS.length), 1800);
+    return () => clearInterval(t);
+  }, [setupPending, SETUP_MSGS.length]);
+  const [messages, setMessages]         = useState<Message[]>([{ id: "w", role: "agent", text: buildWelcome(savedBiz) }]);
   const [input, setInput]               = useState("");
   const [loading, setLoading]           = useState(false);
   const [toolSteps, setToolSteps]       = useState<string[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showIntro, setShowIntro]       = useState(true);
+  const [showIntro, setShowIntro]       = useState(!savedBiz);
   const bottomRef   = useRef<HTMLDivElement>(null);
   const textRef     = useRef<HTMLTextAreaElement>(null);
   const inputWrap   = useRef<HTMLDivElement>(null);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
+
+  // Re-hydrate agent context on page load if profile is cached
+  useEffect(() => {
+    if (savedBiz) setupBusiness(SESSION_ID, savedBiz).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -87,10 +113,16 @@ export default function Home() {
       <AnimatePresence>
         {showIntro && (
           <IntroModal onDone={(biz) => {
-            setupBusiness(SESSION_ID, biz).catch(() => {}); // fire and forget
-            setBusiness(biz);
-            setMessages([{ id: "w", role: "agent", text: buildWelcome(biz) }]);
             setShowIntro(false);
+            setBusiness(biz);
+            try { localStorage.setItem("wcbiz_profile", JSON.stringify(biz)); } catch {}
+            setMessages([{ id: "w", role: "agent", text: buildWelcome(biz) }]);
+            setSetupPending(true);
+            setupBusiness(SESSION_ID, biz).catch(() => {}).finally(() => {
+              setSetupPending(false);
+              setSetupDone(true);
+              setTimeout(() => setSetupDone(false), 4000);
+            });
           }} />
         )}
       </AnimatePresence>
@@ -109,9 +141,17 @@ export default function Home() {
             <WaveLogo size={26} className="text-white" />
           </div>
           <div>
-            <h1 className="text-white font-black text-xl tracking-tight leading-none">
-              {business ? business.name : "World Cup Biz AI"}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-white font-black text-xl tracking-tight leading-none">
+                {business ? business.name : "World Cup Biz AI"}
+              </h1>
+              {business && (
+                <span className="flex items-center gap-1 bg-green-500/20 border border-green-500/30 text-green-300 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                  Connected
+                </span>
+              )}
+            </div>
             <p className="text-blue-200 text-xs mt-0.5">
               {business
                 ? `${business.type} · ${business.city} · Gemini 2.5 + MongoDB Atlas`
@@ -132,6 +172,41 @@ export default function Home() {
           <RotateCcw className="w-4 h-4" />
         </button>
       </div>
+
+      {/* ── Setup banner ───────────────────────────────────── */}
+      <AnimatePresence>
+        {(setupPending || setupDone) && (
+          <motion.div
+            className={`flex-shrink-0 flex items-center gap-2 px-5 py-2 border-b ${
+              setupDone
+                ? "bg-green-950/40 border-green-500/20"
+                : "bg-[#1a2540] border-[#3b5bdb]/30"
+            }`}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            {setupDone ? (
+              <><span className="text-green-400 text-sm">✓</span>
+              <span className="text-xs text-green-300 font-medium">Business profile saved to MongoDB Atlas — responses are now tailored to you.</span></>
+            ) : (
+              <><span className="w-3 h-3 border-2 border-blue-400/40 border-t-blue-400 rounded-full animate-spin flex-shrink-0" />
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={setupMsgIdx}
+                  className="text-xs text-blue-300"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  {SETUP_MSGS[setupMsgIdx]}
+                </motion.span>
+              </AnimatePresence></>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Messages ───────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto chat-scroll px-6 py-6">
