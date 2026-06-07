@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import ChatMessage from "@/components/ChatMessage";
 import TypingIndicator from "@/components/TypingIndicator";
-import { sendMessage, resetSession } from "@/lib/api";
+import { sendMessageStream, resetSession } from "@/lib/api";
 import { Send, RotateCcw, CalendarDays, Megaphone, Users, Zap } from "lucide-react";
 import WaveLogo from "@/components/WaveLogo";
 
@@ -24,27 +24,37 @@ export default function Home() {
   const [messages, setMessages]         = useState<Message[]>([{ id: "w", role: "agent", text: WELCOME }]);
   const [input, setInput]               = useState("");
   const [loading, setLoading]           = useState(false);
+  const [toolSteps, setToolSteps]       = useState<string[]>([]);
   const [showSuggestions, setShowSugg]  = useState(true);
   const bottomRef  = useRef<HTMLDivElement>(null);
   const textRef    = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
-  const submit = useCallback(async (text: string) => {
+  const submit = useCallback((text: string) => {
     if (!text.trim() || loading) return;
     setShowSugg(false);
     setInput("");
     setMessages(p => [...p, { id: Date.now().toString(), role: "user", text: text.trim() }]);
     setLoading(true);
-    try {
-      const reply = await sendMessage(text.trim(), SESSION_ID);
-      setMessages(p => [...p, { id: Date.now() + "r", role: "agent", text: reply }]);
-    } catch {
-      setMessages(p => [...p, { id: Date.now() + "e", role: "agent", text: "Something went wrong — please try again." }]);
-    } finally {
-      setLoading(false);
-      textRef.current?.focus();
-    }
+    setToolSteps([]);
+
+    sendMessageStream(
+      text.trim(),
+      SESSION_ID,
+      (name) => setToolSteps(p => [...p, name]),
+      (reply) => {
+        setMessages(p => [...p, { id: Date.now() + "r", role: "agent", text: reply }]);
+        setLoading(false);
+        setToolSteps([]);
+        textRef.current?.focus();
+      },
+      () => {
+        setMessages(p => [...p, { id: Date.now() + "e", role: "agent", text: "Something went wrong — please try again." }]);
+        setLoading(false);
+        setToolSteps([]);
+      },
+    );
   }, [loading]);
 
   const handleReset = async () => {
@@ -91,7 +101,7 @@ export default function Home() {
       <div className="flex-1 overflow-y-auto chat-scroll px-6 py-6">
         <div className="flex flex-col gap-4">
           {messages.map(m => <ChatMessage key={m.id} role={m.role} text={m.text} />)}
-          {loading && <TypingIndicator />}
+          {loading && <TypingIndicator steps={toolSteps} />}
 
           {showSuggestions && !loading && (
             <div className="grid grid-cols-2 gap-3 mt-2">

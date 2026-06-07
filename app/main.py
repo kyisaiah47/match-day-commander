@@ -1,9 +1,11 @@
 """FastAPI server — serves the chat UI and agent API."""
+import json
 import os
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -13,6 +15,14 @@ from app.agent import MatchDayAgent
 load_dotenv()
 
 app = FastAPI(title="Match Day Commander")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 STATIC = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
@@ -53,6 +63,22 @@ async def reset(req: ResetRequest):
     agent = _get_agent(req.session_id)
     agent.reset()
     return JSONResponse({"status": "ok"})
+
+
+@app.post("/api/chat/stream")
+async def chat_stream(req: ChatRequest):
+    agent = _get_agent(req.session_id)
+
+    async def event_gen():
+        async for event in agent.chat_stream(req.message):
+            yield f"data: {json.dumps(event)}\n\n"
+        yield 'data: {"type":"done"}\n\n'
+
+    return StreamingResponse(
+        event_gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.get("/api/health")

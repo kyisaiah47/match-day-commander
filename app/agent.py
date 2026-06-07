@@ -186,6 +186,14 @@ class MatchDayAgent:
         self.history: list[types.Content] = []
 
     async def chat(self, user_message: str) -> str:
+        text = ""
+        async for event in self.chat_stream(user_message):
+            if event["type"] == "text":
+                text = event["content"]
+        return text or "(no response)"
+
+    async def chat_stream(self, user_message: str):
+        """Yield SSE-style dicts: tool call events then the final text."""
         self.history.append(types.Content(
             role="user",
             parts=[types.Part(text=user_message)],
@@ -210,9 +218,12 @@ class MatchDayAgent:
 
             if not function_calls:
                 texts = [p.text for p in content.parts if p.text]
-                return "\n".join(texts) if texts else "(no response)"
+                yield {"type": "text", "content": "\n".join(texts) if texts else "(no response)"}
+                return
 
-            # Execute tools and feed results back
+            for fc in function_calls:
+                yield {"type": "tool", "name": fc.name}
+
             tool_parts = []
             for fc in function_calls:
                 args = dict(fc.args) if fc.args else {}
