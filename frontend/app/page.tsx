@@ -18,7 +18,7 @@ const SUGGESTIONS = [
   { icon: Zap,          label: "Crowd forecast",   prompt: "What's the crowd forecast for Inglewood on June 20th?" },
 ];
 
-const WELCOME = "Welcome to **Match Day Commander**\n\nI help local businesses near FIFA World Cup 2026 venues maximize revenue on match days. I can:\n\n* Look up match schedules and crowd forecasts\n* Generate targeted marketing campaigns\n* Recommend staffing levels and inventory boosts\n* Save everything to your MongoDB Atlas database\n\nClick the input below and pick a suggestion, or describe your business and city.";
+const WELCOME = "Welcome to **World Cup Biz AI**\n\nI help local businesses near FIFA World Cup 2026 venues maximize revenue on match days. I can:\n\n* Look up match schedules and crowd forecasts\n* Generate targeted marketing campaigns\n* Recommend staffing levels and inventory boosts\n* Save everything to your MongoDB Atlas database\n\nClick the input below and pick a suggestion, or describe your business and city.";
 
 interface Message { id: string; role: "user" | "agent"; text: string; }
 
@@ -98,7 +98,7 @@ export default function Home() {
             <WaveLogo size={26} className="text-white" />
           </div>
           <div>
-            <h1 className="text-white font-black text-xl tracking-tight leading-none">Match Day Commander</h1>
+            <h1 className="text-white font-black text-xl tracking-tight leading-none">World Cup Biz AI</h1>
             <p className="text-blue-200 text-xs mt-0.5">AI agent for local businesses near World Cup venues · Gemini 2.5 + MongoDB Atlas</p>
           </div>
         </div>

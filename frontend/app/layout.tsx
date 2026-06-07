@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Match Day Commander",
+  title: "World Cup Biz AI",
   description: "AI agent for local businesses near FIFA World Cup 2026 venues",
 };
 

@@ -43,7 +43,7 @@ export default function IntroModal({ onClose }: Props) {
               <WaveLogo size={26} className="text-white" />
             </div>
             <div>
-              <h2 className="text-white font-black text-lg leading-tight">Match Day Commander</h2>
+              <h2 className="text-white font-black text-lg leading-tight">World Cup Biz AI</h2>
               <p className="text-blue-200 text-xs mt-0.5">Google Cloud Rapid Agent Hackathon · MongoDB Partner Track</p>
             </div>
             <button onClick={onClose} className="ml-auto text-white/50 hover:text-white transition-colors">
