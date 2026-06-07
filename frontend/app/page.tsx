@@ -13,10 +13,10 @@ import WaveLogo from "@/components/WaveLogo";
 const SESSION_ID = `session_${Math.random().toString(36).slice(2)}`;
 
 const buildSuggestions = (biz?: BusinessProfile) => [
-  { icon: CalendarDays, label: "Match schedule",  prompt: `What matches are coming to ${biz?.city ?? "East Rutherford, NJ"}?` },
-  { icon: Megaphone,    label: "Run a campaign",   prompt: `Create a social media campaign for ${biz?.name ?? "my business"} on June 14th` },
-  { icon: Users,        label: "Staffing plan",    prompt: `How should ${biz?.name ?? "my business"} staff up for the Germany vs Spain match?` },
-  { icon: Zap,          label: "Crowd forecast",   prompt: `What's the crowd forecast for ${biz?.city ?? "East Rutherford, NJ"}?` },
+  { icon: CalendarDays, label: "Match schedule",  prompt: `Which World Cup matches are coming to ${biz?.city ?? "East Rutherford, NJ"} and how big are the crowds expected to be?` },
+  { icon: Megaphone,    label: "Run a campaign",   prompt: `Germany vs Brazil is coming to ${biz?.city ?? "East Rutherford, NJ"} on June 14th. Create a social media campaign for ${biz?.name ?? "my business"} and tell me how many extra staff I need.` },
+  { icon: Users,        label: "Staffing plan",    prompt: `There's a match at ${biz?.city ?? "East Rutherford, NJ"} this weekend with 80,000 fans. Give ${biz?.name ?? "my business"} a full staffing and inventory plan.` },
+  { icon: Zap,          label: "Crowd forecast",   prompt: `What's the fan breakdown for the next match in ${biz?.city ?? "East Rutherford, NJ"}? Which nationalities, peak hours, and what should ${biz?.name ?? "my business"} prepare for?` },
 ];
 
 const buildWelcome = (biz?: BusinessProfile) =>
