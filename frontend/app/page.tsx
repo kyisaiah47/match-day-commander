@@ -6,7 +6,7 @@ import ChatMessage from "@/components/ChatMessage";
 import TypingIndicator from "@/components/TypingIndicator";
 import IntroModal from "@/components/IntroModal";
 import { sendMessageStream, resetSession, setupBusiness, BusinessProfile } from "@/lib/api";
-import { Send, RotateCcw, CalendarDays, Megaphone, Users, Zap } from "lucide-react";
+import { Send, RotateCcw, CalendarDays, Megaphone, Users, Zap, Pencil } from "lucide-react";
 import WaveLogo from "@/components/WaveLogo";
 
 const SESSION_ID = `session_${Math.random().toString(36).slice(2)}`;
@@ -61,7 +61,14 @@ export default function Home() {
 
   // Re-hydrate agent context on page load if profile is cached
   useEffect(() => {
-    if (savedBiz) setupBusiness(SESSION_ID, savedBiz).catch(() => {});
+    if (savedBiz) {
+      setSetupPending(true);
+      setupBusiness(SESSION_ID, savedBiz).catch(() => {}).finally(() => {
+        setSetupPending(false);
+        setSetupDone(true);
+        setTimeout(() => setSetupDone(false), 4000);
+      });
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -112,7 +119,7 @@ export default function Home() {
     <div className="flex flex-col h-screen overflow-hidden bg-[#09090b]">
       <AnimatePresence>
         {showIntro && (
-          <IntroModal onDone={(biz) => {
+          <IntroModal initial={business} onClose={() => setShowIntro(false)} onDone={(biz) => {
             setShowIntro(false);
             setBusiness(biz);
             try { localStorage.setItem("wcbiz_profile", JSON.stringify(biz)); } catch {}
@@ -146,10 +153,9 @@ export default function Home() {
                 {business ? business.name : "World Cup Biz AI"}
               </h1>
               {business && (
-                <span className="flex items-center gap-1 bg-green-500/20 border border-green-500/30 text-green-300 text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                  Connected
-                </span>
+                <button onClick={() => setShowIntro(true)} className="text-white/40 hover:text-white transition-colors" title="Edit business details">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
               )}
             </div>
             <p className="text-blue-200 text-xs mt-0.5">

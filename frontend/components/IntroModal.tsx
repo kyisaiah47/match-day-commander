@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Database, Zap, BarChart3, BookMarked, ChevronRight, Minus, Plus } from "lucide-react";
+import { Database, Zap, BarChart3, BookMarked, ChevronRight, Minus, Plus, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import WaveLogo from "./WaveLogo";
@@ -10,6 +10,8 @@ import { BusinessProfile } from "@/lib/api";
 
 interface Props {
   onDone: (business: BusinessProfile) => void;
+  onClose?: () => void;
+  initial?: BusinessProfile;
 }
 
 const FEATURES = [
@@ -36,11 +38,11 @@ const slide = {
   exit: (dir: number) => ({ opacity: 0, x: dir * -40 }),
 };
 
-export default function IntroModal({ onDone }: Props) {
-  const [step, setStep] = useState(1);
+export default function IntroModal({ onDone, onClose, initial }: Props) {
+  const [step, setStep] = useState(initial ? 2 : 1);
   const [dir, setDir] = useState(1);
-  const [form, setForm] = useState<BusinessProfile>({ name: "", type: "", city: "", capacity: "" });
-  const [otherType, setOtherType] = useState("");
+  const [form, setForm] = useState<BusinessProfile>(initial ?? { name: "", type: "", city: "", capacity: "" });
+  const [otherType, setOtherType] = useState(initial && !BIZ_TYPES.includes(initial.type) ? initial.type : "");
   const [submitting, setSubmitting] = useState(false);
 
   const goNext = () => { setDir(1); setStep(2); };
@@ -83,12 +85,20 @@ export default function IntroModal({ onDone }: Props) {
             <h2 className="text-white font-black text-base leading-tight">World Cup Biz AI</h2>
             <p className="text-blue-200 text-[11px]">Google Cloud Rapid Agent Hackathon · MongoDB</p>
           </div>
-          {/* Step dots */}
-          <div className="flex gap-1.5 items-center mr-2">
-            {[1, 2].map(s => (
-              <div key={s} className={`rounded-full transition-all ${s === step ? "w-4 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/30"}`} />
-            ))}
-          </div>
+          {/* Step dots — only show on first-time flow */}
+          {!initial && (
+            <div className="flex gap-1.5 items-center mr-2">
+              {[1, 2].map(s => (
+                <div key={s} className={`rounded-full transition-all ${s === step ? "w-4 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/30"}`} />
+              ))}
+            </div>
+          )}
+          {/* Close — only when editing existing profile */}
+          {initial && onClose && (
+            <button onClick={onClose} className="text-white/50 hover:text-white transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Animated step body */}
