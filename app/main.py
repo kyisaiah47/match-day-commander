@@ -57,4 +57,4 @@ async def reset(req: ResetRequest):
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "model": "gemini-2.0-flash"}
+    return {"status": "ok", "model": "gemini-2.5-flash"}
