@@ -104,13 +104,13 @@ export default function NotesSidebar({ onClose }: Props) {
 
         {/* Match Day tab */}
         <TabsContent value="matchday" className="flex flex-col flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
-          <div className="flex-shrink-0 flex justify-center border-b border-[#27272a] py-2">
+          <div className="flex-shrink-0 border-b border-[#27272a]">
             <Calendar
               mode="single"
               selected={date}
               onSelect={setDate}
               disabled={d => d < WC_START || d > WC_END}
-              className="scale-[0.82] origin-top"
+              className="w-full p-0 [--cell-size:--spacing(6)] bg-transparent"
             />
           </div>
           <div className="flex justify-between items-center px-3 pt-2 flex-shrink-0">
