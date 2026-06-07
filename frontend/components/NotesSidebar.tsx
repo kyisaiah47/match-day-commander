@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { X, Trash2, Cloud, CloudOff, Loader } from "lucide-react";
+import { X, Trash2, Cloud, CloudOff, Loader, CalendarDays, ChevronDown } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
 const USER_ID_KEY = "wcbiz_user_id";
@@ -104,17 +105,23 @@ export default function NotesSidebar({ onClose }: Props) {
 
         {/* Match Day tab */}
         <TabsContent value="matchday" className="flex flex-col flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
-          <div className="flex-shrink-0 border-b border-[#27272a]">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              disabled={d => d < WC_START || d > WC_END}
-              className="scale-[0.78] origin-top-left w-[128.2%] p-0 [--cell-size:--spacing(6)] bg-transparent"
-            />
-          </div>
           <div className="flex justify-between items-center px-3 pt-2 flex-shrink-0">
-            <span className="text-[10px] text-zinc-500">{dateKey || "No date selected"}</span>
+            <Popover>
+              <PopoverTrigger className="flex items-center gap-1.5 text-[11px] text-zinc-300 bg-[#18181b] border border-[#3f3f46] hover:border-zinc-500 rounded-lg px-2.5 py-1.5 transition-colors">
+                <CalendarDays className="w-3 h-3 text-zinc-500" />
+                {dateKey || "Pick a date"}
+                <ChevronDown className="w-3 h-3 text-zinc-500" />
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-[#18181b] border-[#3f3f46]" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  disabled={d => d < WC_START || d > WC_END}
+                  className="p-2 bg-transparent"
+                />
+              </PopoverContent>
+            </Popover>
             <button onClick={() => updateDated("")} className="text-zinc-700 hover:text-zinc-400 transition-colors flex items-center gap-1 text-[10px]">
               <Trash2 className="w-3 h-3" /> Clear
             </button>
