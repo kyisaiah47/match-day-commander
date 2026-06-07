@@ -30,6 +30,18 @@ export default function Home() {
   const [business, setBusiness]         = useState<BusinessProfile | undefined>();
   const [setupPending, setSetupPending] = useState(false);
   const [setupDone, setSetupDone]       = useState(false);
+
+  const runSetup = (biz: BusinessProfile) => {
+    setSetupPending(true);
+    const timeout = new Promise(res => setTimeout(res, 5000));
+    Promise.race([setupBusiness(SESSION_ID, biz), timeout])
+      .catch(() => {})
+      .finally(() => {
+        setSetupPending(false);
+        setSetupDone(true);
+        setTimeout(() => setSetupDone(false), 4000);
+      });
+  };
   const [setupMsgIdx, setSetupMsgIdx]   = useState(0);
 
   const SETUP_MSGS = useMemo(() => [
@@ -66,12 +78,7 @@ export default function Home() {
       if (saved) {
         setBusiness(saved);
         setMessages([{ id: "w", role: "agent", text: buildWelcome(saved) }]);
-        setSetupPending(true);
-        setupBusiness(SESSION_ID, saved).catch(() => {}).finally(() => {
-          setSetupPending(false);
-          setSetupDone(true);
-          setTimeout(() => setSetupDone(false), 4000);
-        });
+        runSetup(saved);
       } else {
         setShowIntro(true);
       }
@@ -134,12 +141,7 @@ export default function Home() {
             setBusiness(biz);
             try { localStorage.setItem("wcbiz_profile", JSON.stringify(biz)); } catch {}
             setMessages([{ id: "w", role: "agent", text: buildWelcome(biz) }]);
-            setSetupPending(true);
-            setupBusiness(SESSION_ID, biz).catch(() => {}).finally(() => {
-              setSetupPending(false);
-              setSetupDone(true);
-              setTimeout(() => setSetupDone(false), 4000);
-            });
+            runSetup(biz);
           }} />
         )}
       </AnimatePresence>
