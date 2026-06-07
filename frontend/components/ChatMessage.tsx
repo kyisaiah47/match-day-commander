@@ -25,13 +25,11 @@ export default function ChatMessage({ role, text }: Props) {
         }
       </div>
       <motion.div
-        className={`rounded-xl px-4 py-3 text-sm leading-relaxed flex-1 prose prose-invert prose-sm max-w-none
-          prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-white
-          prose-headings:text-white prose-headings:font-semibold
-          ${isUser
+        className={`rounded-xl px-4 py-3 text-sm leading-relaxed flex-1 markdown-body ${
+          isUser
             ? "bg-[#27272a] text-zinc-100 rounded-tr-sm border border-zinc-700"
             : "bg-[#18181b] text-zinc-100 rounded-tl-sm border border-zinc-700/60"
-          }`}
+        }`}
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.2, ease: "easeOut", delay: 0.05 }}

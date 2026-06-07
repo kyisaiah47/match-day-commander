@@ -3,6 +3,15 @@
 @import "shadcn/tailwind.css";
 @plugin "@tailwindcss/typography";
 
+.markdown-body p { margin: 0.25rem 0; color: inherit; }
+.markdown-body ul { margin: 0.25rem 0; padding-left: 1.25rem; list-style: disc; color: inherit; }
+.markdown-body ol { margin: 0.25rem 0; padding-left: 1.25rem; list-style: decimal; color: inherit; }
+.markdown-body li { margin: 0.15rem 0; color: inherit; }
+.markdown-body strong { color: #fff; font-weight: 600; }
+.markdown-body h1, .markdown-body h2, .markdown-body h3 { color: #fff; font-weight: 600; margin: 0.5rem 0 0.25rem; }
+.markdown-body code { background: #0a1628; border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.85em; }
+.markdown-body blockquote { border-left: 3px solid #3b5bdb; padding-left: 0.75rem; margin: 0.25rem 0; opacity: 0.85; }
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
