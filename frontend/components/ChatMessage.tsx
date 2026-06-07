@@ -3,32 +3,9 @@
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
 import WaveLogo from "./WaveLogo";
+import ReactMarkdown from "react-markdown";
 
 interface Props { role: "user" | "agent"; text: string; }
-
-function renderInline(text: string) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-    part.startsWith("**") && part.endsWith("**")
-      ? <strong key={i} className="text-white font-semibold">{part.slice(2, -2)}</strong>
-      : <span key={i}>{part}</span>
-  );
-}
-
-function formatText(text: string) {
-  return text.split("\n").map((line, i) => {
-    if (line.startsWith("* ")) {
-      return (
-        <div key={i} className="flex items-start gap-2 my-0.5">
-          <span className="text-[#748ffc] mt-1 text-xs leading-none">▸</span>
-          <span>{renderInline(line.slice(2))}</span>
-        </div>
-      );
-    }
-    return line === ""
-      ? <div key={i} className="h-2" />
-      : <p key={i}>{renderInline(line)}</p>;
-  });
-}
 
 export default function ChatMessage({ role, text }: Props) {
   const isUser = role === "user";
@@ -48,16 +25,18 @@ export default function ChatMessage({ role, text }: Props) {
         }
       </div>
       <motion.div
-        className={`rounded-xl px-4 py-3 text-sm leading-relaxed flex-1 ${
-          isUser
+        className={`rounded-xl px-4 py-3 text-sm leading-relaxed flex-1 prose prose-invert prose-sm max-w-none
+          prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-white
+          prose-headings:text-white prose-headings:font-semibold
+          ${isUser
             ? "bg-[#27272a] text-zinc-100 rounded-tr-sm border border-zinc-700"
             : "bg-[#18181b] text-zinc-100 rounded-tl-sm border border-zinc-700/60"
-        }`}
+          }`}
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.2, ease: "easeOut", delay: 0.05 }}
       >
-        {formatText(text)}
+        <ReactMarkdown>{text}</ReactMarkdown>
       </motion.div>
     </motion.div>
   );
