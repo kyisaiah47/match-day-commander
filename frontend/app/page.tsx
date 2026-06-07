@@ -7,22 +7,23 @@ import TypingIndicator from "@/components/TypingIndicator";
 import IntroModal from "@/components/IntroModal";
 import NotesSidebar from "@/components/NotesSidebar";
 import { sendMessageStream, resetSession, setupBusiness, BusinessProfile } from "@/lib/api";
-import { Send, CalendarDays, Megaphone, Users, Zap, Pencil, NotebookPen } from "lucide-react";
+import { Send, CalendarDays, Megaphone, Users, Zap, Pencil, NotebookPen, BookMarked } from "lucide-react";
 import WaveLogo from "@/components/WaveLogo";
 
 const SESSION_ID = `session_${Math.random().toString(36).slice(2)}`;
 
 const buildSuggestions = (biz?: BusinessProfile) => [
   { icon: CalendarDays, label: "Match schedule",  prompt: `Which World Cup matches are coming to ${biz?.city ?? "East Rutherford, NJ"} and how big are the crowds expected to be?` },
-  { icon: Megaphone,    label: "Run a campaign",   prompt: `Germany vs Brazil is coming to ${biz?.city ?? "East Rutherford, NJ"} on June 14th. Create a social media campaign for ${biz?.name ?? "my business"} and tell me how many extra staff I need.` },
-  { icon: Users,        label: "Staffing plan",    prompt: `There's a match at ${biz?.city ?? "East Rutherford, NJ"} this weekend with 80,000 fans. Give ${biz?.name ?? "my business"} a full staffing and inventory plan.` },
+  { icon: Megaphone,    label: "Run a campaign",   prompt: `Germany vs Brazil is coming to ${biz?.city ?? "East Rutherford, NJ"} on June 14th. Create and save a social media campaign for ${biz?.name ?? "my business"}.` },
+  { icon: Users,        label: "Staffing plan",    prompt: `There's a match at ${biz?.city ?? "East Rutherford, NJ"} this weekend with 80,000 fans. Create and save a full staffing plan for ${biz?.name ?? "my business"}.` },
   { icon: Zap,          label: "Crowd forecast",   prompt: `What's the fan breakdown for the next match in ${biz?.city ?? "East Rutherford, NJ"}? Which nationalities, peak hours, and what should ${biz?.name ?? "my business"} prepare for?` },
+  { icon: BookMarked,   label: "Saved items",      prompt: `Show me everything saved for ${biz?.name ?? "my business"} — campaigns, staffing plans, and recommendations.` },
 ];
 
 const buildWelcome = (biz?: BusinessProfile) =>
   biz
-    ? `Welcome, **${biz.name}**!\n\nYou're all set. I know you run a **${biz.type}** near **${biz.city}**${biz.capacity ? ` with ${biz.capacity} seats` : ""}. I'll tailor everything to you.\n\n* Check upcoming matches and crowd forecasts for ${biz.city}\n* Generate campaigns specifically for ${biz.name}\n* Get staffing recommendations based on your capacity\n\nWhat do you want to prepare for first?`
-    : `Welcome to **World Cup Biz AI**\n\nI help local businesses near FIFA World Cup 2026 venues maximize revenue on match days.\n\n* Look up match schedules and crowd forecasts\n* Generate targeted marketing campaigns\n* Recommend staffing levels and inventory boosts\n\nClick the input below and pick a suggestion, or describe your business and city.`;
+    ? `Welcome, **${biz.name}**!\n\nYou're all set. I know you run a **${biz.type}** near **${biz.city}**${biz.capacity ? ` with ${biz.capacity} seats` : ""}. I'll tailor everything to you.\n\n* Check upcoming matches and crowd forecasts for ${biz.city}\n* Generate and **save** campaigns and staffing plans to your account\n* Ask me to **show your saved items** anytime to retrieve them\n\nWhat do you want to prepare for first?`
+    : `Welcome to **World Cup Biz AI**\n\nI help local businesses near FIFA World Cup 2026 venues maximize revenue on match days.\n\n* Look up match schedules and crowd forecasts\n* Generate and **save** marketing campaigns and staffing plans\n* Ask me to **show your saved items** anytime to retrieve them\n\nClick the input below and pick a suggestion, or describe your business and city.`;
 
 interface Message { id: string; role: "user" | "agent"; text: string; }
 
