@@ -99,18 +99,21 @@ async def chat_stream(req: ChatRequest):
 
 class NotesRequest(BaseModel):
     user_id: str
-    content: str
+    general: str | None = None
+    date: str | None = None      # ISO date e.g. "2026-06-14"
+    dated_content: str | None = None
 
 
 @app.post("/api/notes")
 async def save_notes(req: NotesRequest):
     from app.tools.mongodb_tools import _db
     db = _db()
-    await db.notes.update_one(
-        {"user_id": req.user_id},
-        {"$set": {"content": req.content, "updated_at": __import__("datetime").datetime.utcnow().isoformat()}},
-        upsert=True,
-    )
+    update: dict = {"updated_at": __import__("datetime").datetime.utcnow().isoformat()}
+    if req.general is not None:
+        update["general"] = req.general
+    if req.date and req.dated_content is not None:
+        update[f"dated.{req.date}"] = req.dated_content
+    await db.notes.update_one({"user_id": req.user_id}, {"$set": update}, upsert=True)
     return JSONResponse({"status": "ok"})
 
 
@@ -119,7 +122,10 @@ async def get_notes(user_id: str):
     from app.tools.mongodb_tools import _db
     db = _db()
     doc = await db.notes.find_one({"user_id": user_id}, {"_id": 0})
-    return JSONResponse({"content": doc["content"] if doc else ""})
+    return JSONResponse({
+        "general": doc.get("general", "") if doc else "",
+        "dated": doc.get("dated", {}) if doc else {},
+    })
 
 
 @app.get("/api/health")

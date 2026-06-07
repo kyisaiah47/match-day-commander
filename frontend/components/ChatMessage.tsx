@@ -37,12 +37,12 @@ async function addToNotes(text: string) {
   try {
     const userId = localStorage.getItem("wcbiz_user_id") ?? "anonymous";
     const res = await fetch(`${BASE}/api/notes?user_id=${userId}`);
-    const { content } = await res.json();
-    const separator = content ? "\n\n---\n\n" : "";
+    const { general } = await res.json();
+    const separator = general ? "\n\n---\n\n" : "";
     await fetch(`${BASE}/api/notes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId, content: content + separator + text }),
+      body: JSON.stringify({ user_id: userId, general: general + separator + text }),
     });
   } catch {}
 }
