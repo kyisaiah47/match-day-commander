@@ -130,7 +130,7 @@ export default function NotesSidebar({ onClose }: Props) {
             key={dateKey}
             value={datedContent}
             onChange={e => updateDated(e.target.value)}
-            placeholder={date ? `Notes for ${dateKey}...` : "Pick a match date above"}
+            placeholder={date ? "Write your match day notes here..." : "Pick a match date above"}
             disabled={!date}
             className="flex-1 w-full bg-transparent text-zinc-300 text-xs leading-relaxed resize-none outline-none px-4 py-2 placeholder:text-zinc-700 disabled:opacity-40"
           />
