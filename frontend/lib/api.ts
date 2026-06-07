@@ -53,6 +53,16 @@ export async function sendMessageStream(
   }
 }
 
+export interface BusinessProfile { name: string; type: string; city: string; capacity: string; }
+
+export async function setupBusiness(sessionId: string, business: BusinessProfile): Promise<void> {
+  await fetch(`${BASE}/api/setup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, ...business }),
+  });
+}
+
 export async function resetSession(sessionId: string): Promise<void> {
   await fetch(`${BASE}/api/reset`, {
     method: "POST",

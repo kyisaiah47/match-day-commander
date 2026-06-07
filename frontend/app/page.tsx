@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ChatMessage from "@/components/ChatMessage";
 import TypingIndicator from "@/components/TypingIndicator";
 import IntroModal from "@/components/IntroModal";
-import { sendMessageStream, resetSession } from "@/lib/api";
+import { sendMessageStream, resetSession, setupBusiness, BusinessProfile } from "@/lib/api";
 import { Send, RotateCcw, CalendarDays, Megaphone, Users, Zap } from "lucide-react";
 import WaveLogo from "@/components/WaveLogo";
 
@@ -18,12 +18,16 @@ const SUGGESTIONS = [
   { icon: Zap,          label: "Crowd forecast",   prompt: "What's the crowd forecast for Inglewood on June 20th?" },
 ];
 
-const WELCOME = "Welcome to **World Cup Biz AI**\n\nI help local businesses near FIFA World Cup 2026 venues maximize revenue on match days. I can:\n\n* Look up match schedules and crowd forecasts\n* Generate targeted marketing campaigns\n* Recommend staffing levels and inventory boosts\n* Save everything to your MongoDB Atlas database\n\nClick the input below and pick a suggestion, or describe your business and city.";
+const buildWelcome = (biz?: BusinessProfile) =>
+  biz
+    ? `Welcome, **${biz.name}**!\n\nYou're all set. I know you run a **${biz.type}** near **${biz.city}**${biz.capacity ? ` with ${biz.capacity} seats` : ""}. I'll tailor everything to you.\n\n* Check upcoming matches and crowd forecasts for ${biz.city}\n* Generate campaigns specifically for ${biz.name}\n* Get staffing recommendations based on your capacity\n\nWhat do you want to prepare for first?`
+    : `Welcome to **World Cup Biz AI**\n\nI help local businesses near FIFA World Cup 2026 venues maximize revenue on match days.\n\n* Look up match schedules and crowd forecasts\n* Generate targeted marketing campaigns\n* Recommend staffing levels and inventory boosts\n\nClick the input below and pick a suggestion, or describe your business and city.`;
 
 interface Message { id: string; role: "user" | "agent"; text: string; }
 
 export default function Home() {
-  const [messages, setMessages]         = useState<Message[]>([{ id: "w", role: "agent", text: WELCOME }]);
+  const [business, setBusiness]         = useState<BusinessProfile | undefined>();
+  const [messages, setMessages]         = useState<Message[]>([{ id: "w", role: "agent", text: buildWelcome() }]);
   const [input, setInput]               = useState("");
   const [loading, setLoading]           = useState(false);
   const [toolSteps, setToolSteps]       = useState<string[]>([]);
@@ -74,14 +78,21 @@ export default function Home() {
 
   const handleReset = async () => {
     await resetSession(SESSION_ID);
-    setMessages([{ id: "w", role: "agent", text: WELCOME }]);
+    setMessages([{ id: "w", role: "agent", text: buildWelcome(business) }]);
     setShowDropdown(false);
   };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#09090b]">
       <AnimatePresence>
-        {showIntro && <IntroModal onClose={() => setShowIntro(false)} />}
+        {showIntro && (
+          <IntroModal onDone={async (biz) => {
+            await setupBusiness(SESSION_ID, biz);
+            setBusiness(biz);
+            setMessages([{ id: "w", role: "agent", text: buildWelcome(biz) }]);
+            setShowIntro(false);
+          }} />
+        )}
       </AnimatePresence>
 
       {/* ── Top bar ────────────────────────────────────────── */}
@@ -98,8 +109,14 @@ export default function Home() {
             <WaveLogo size={26} className="text-white" />
           </div>
           <div>
-            <h1 className="text-white font-black text-xl tracking-tight leading-none">World Cup Biz AI</h1>
-            <p className="text-blue-200 text-xs mt-0.5">AI agent for local businesses near World Cup venues · Gemini 2.5 + MongoDB Atlas</p>
+            <h1 className="text-white font-black text-xl tracking-tight leading-none">
+              {business ? business.name : "World Cup Biz AI"}
+            </h1>
+            <p className="text-blue-200 text-xs mt-0.5">
+              {business
+                ? `${business.type} · ${business.city} · Gemini 2.5 + MongoDB Atlas`
+                : "AI agent for local businesses near World Cup venues · Gemini 2.5 + MongoDB Atlas"}
+            </p>
           </div>
         </div>
         <div className="hidden sm:flex items-center gap-6 text-sm text-white">

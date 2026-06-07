@@ -45,10 +45,26 @@ class ResetRequest(BaseModel):
     session_id: str = "default"
 
 
+class SetupRequest(BaseModel):
+    session_id: str = "default"
+    name: str
+    type: str
+    city: str
+    capacity: str = ""
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index():
     html = (STATIC / "index.html").read_text()
     return HTMLResponse(html)
+
+
+@app.post("/api/setup")
+async def setup(req: SetupRequest):
+    business = {"name": req.name, "type": req.type, "city": req.city, "capacity": req.capacity}
+    agent = _get_agent(req.session_id)
+    agent.set_business(business)
+    return JSONResponse({"status": "ok", "business": business})
 
 
 @app.post("/api/chat")

@@ -28,7 +28,7 @@ from app.tools.mongodb_tools import (
 
 load_dotenv()
 
-SYSTEM_PROMPT = """You are Match Day Commander, an AI agent that helps local businesses near FIFA World Cup 2026 venues maximize their revenue during match days.
+BASE_SYSTEM_PROMPT = """You are World Cup Biz AI, an AI agent that helps local businesses near FIFA World Cup 2026 venues maximize their revenue during match days.
 
 You have access to real-time crowd forecasts, match schedules, and business profiles stored in MongoDB Atlas. You can:
 - Look up upcoming matches and expected crowd sizes for any host city
@@ -43,6 +43,18 @@ When a user asks about a city or business, proactively:
 4. Save campaigns/recommendations to the database
 
 Be specific, data-driven, and actionable. Always cite the expected attendance numbers and timing windows."""
+
+def _build_system_prompt(business: dict | None) -> str:
+    if not business:
+        return BASE_SYSTEM_PROMPT
+    return BASE_SYSTEM_PROMPT + f"""
+
+CURRENT USER'S BUSINESS:
+- Name: {business.get('name')}
+- Type: {business.get('type')}
+- Venue city: {business.get('city')}
+- Capacity: {business.get('capacity', 'unknown')} seats
+Always tailor every response specifically to this business. Use their name naturally in responses."""
 
 
 # ── Tool definitions using google-genai types ────────────────────────────────
@@ -179,11 +191,19 @@ class MatchDayAgent:
     def __init__(self):
         self._client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
         self._tools = _make_tools()
+        self._business: dict | None = None
         self._config = types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
+            system_instruction=_build_system_prompt(None),
             tools=self._tools,
         )
         self.history: list[types.Content] = []
+
+    def set_business(self, business: dict) -> None:
+        self._business = business
+        self._config = types.GenerateContentConfig(
+            system_instruction=_build_system_prompt(business),
+            tools=self._tools,
+        )
 
     async def chat(self, user_message: str) -> str:
         text = ""
