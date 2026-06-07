@@ -11,11 +11,11 @@ import WaveLogo from "@/components/WaveLogo";
 
 const SESSION_ID = `session_${Math.random().toString(36).slice(2)}`;
 
-const SUGGESTIONS = [
-  { icon: CalendarDays, label: "Match schedule",  prompt: "What matches are coming to East Rutherford, NJ?" },
-  { icon: Megaphone,    label: "Run a campaign",   prompt: "Create a social media campaign for Touchdown Tacos on June 14th" },
-  { icon: Users,        label: "Staffing plan",    prompt: "How should The Pitch Bar staff up for the Germany vs Spain match?" },
-  { icon: Zap,          label: "Crowd forecast",   prompt: "What's the crowd forecast for Inglewood on June 20th?" },
+const buildSuggestions = (biz?: BusinessProfile) => [
+  { icon: CalendarDays, label: "Match schedule",  prompt: `What matches are coming to ${biz?.city ?? "East Rutherford, NJ"}?` },
+  { icon: Megaphone,    label: "Run a campaign",   prompt: `Create a social media campaign for ${biz?.name ?? "my business"} on June 14th` },
+  { icon: Users,        label: "Staffing plan",    prompt: `How should ${biz?.name ?? "my business"} staff up for the Germany vs Spain match?` },
+  { icon: Zap,          label: "Crowd forecast",   prompt: `What's the crowd forecast for ${biz?.city ?? "East Rutherford, NJ"}?` },
 ];
 
 const buildWelcome = (biz?: BusinessProfile) =>
@@ -239,10 +239,10 @@ export default function Home() {
                 exit={{ opacity: 0, y: 8, scale: 0.97 }}
                 transition={{ duration: 0.15, ease: "easeOut" }}
               >
-                {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
+                {buildSuggestions(business).map(({ icon: Icon, label, prompt }) => (
                   <button
                     key={label}
-                    onMouseDown={(e) => { e.preventDefault(); submit(prompt); }}
+                    onMouseDown={(e) => { e.preventDefault(); setInput(prompt); setShowDropdown(false); textRef.current?.focus(); }}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#27272a] transition-colors text-left border-b border-[#3f3f46] last:border-0"
                   >
                     <div className="w-7 h-7 rounded-md bg-[#3b5bdb]/20 flex items-center justify-center flex-shrink-0">
