@@ -86,8 +86,8 @@ export default function Home() {
     <div className="flex flex-col h-screen overflow-hidden bg-[#09090b]">
       <AnimatePresence>
         {showIntro && (
-          <IntroModal onDone={async (biz) => {
-            try { await setupBusiness(SESSION_ID, biz); } catch { /* backend cold start, continue anyway */ }
+          <IntroModal onDone={(biz) => {
+            setupBusiness(SESSION_ID, biz).catch(() => {}); // fire and forget
             setBusiness(biz);
             setMessages([{ id: "w", role: "agent", text: buildWelcome(biz) }]);
             setShowIntro(false);
