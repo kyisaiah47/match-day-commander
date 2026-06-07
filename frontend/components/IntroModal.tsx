@@ -41,6 +41,7 @@ export default function IntroModal({ onDone }: Props) {
   const [dir, setDir] = useState(1);
   const [form, setForm] = useState<BusinessProfile>({ name: "", type: "", city: "", capacity: "" });
   const [otherType, setOtherType] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const goNext = () => { setDir(1); setStep(2); };
   const goBack = () => { setDir(-1); setStep(1); };
@@ -153,7 +154,8 @@ export default function IntroModal({ onDone }: Props) {
                     value={form.name}
                     onChange={e => set("name", e.target.value)}
                     placeholder="e.g. Touchdown Tacos"
-                    className="bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb]"
+                    disabled={submitting}
+                    className="bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb] disabled:opacity-50"
                   />
                 </div>
 
@@ -163,7 +165,8 @@ export default function IntroModal({ onDone }: Props) {
                   <div className="flex flex-wrap gap-2 mb-2">
                     {BIZ_TYPES.map(t => (
                       <button key={t} onClick={() => { set("type", t); setOtherType(""); }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                        disabled={submitting}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                           form.type === t
                             ? "bg-[#3b5bdb] border-[#3b5bdb] text-white"
                             : "bg-[#18181b] border-[#3f3f46] text-zinc-400 hover:border-zinc-500"
@@ -176,14 +179,15 @@ export default function IntroModal({ onDone }: Props) {
                     value={otherType}
                     onChange={e => { setOtherType(e.target.value); if (e.target.value) set("type", ""); }}
                     placeholder="Other — please specify..."
-                    className="bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb] focus-visible:ring-1"
+                    disabled={submitting}
+                    className="bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb] focus-visible:ring-1 disabled:opacity-50"
                   />
                 </div>
 
                 {/* Venue city */}
                 <div className="mb-4">
                   <label className="text-zinc-400 text-xs font-semibold mb-1.5 block">Nearest World Cup venue *</label>
-                  <Select value={form.city} onValueChange={(v: string | null) => v && set("city", v)}>
+                  <Select value={form.city} onValueChange={(v: string | null) => !submitting && v && set("city", v)} disabled={submitting}>
                     <SelectTrigger className="w-full bg-[#18181b] border-[#3f3f46] text-white focus:ring-[#3b5bdb]">
                       <SelectValue placeholder="Select a host city..." />
                     </SelectTrigger>
@@ -201,7 +205,7 @@ export default function IntroModal({ onDone }: Props) {
                     Seating capacity <span className="text-zinc-600 font-normal">(optional)</span>
                   </label>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => adjustCapacity(-10)}
+                    <button onClick={() => adjustCapacity(-10)} disabled={submitting}
                       className="w-9 h-9 rounded-lg border border-[#3f3f46] bg-[#18181b] text-zinc-400 hover:text-white hover:border-zinc-500 flex items-center justify-center transition-all">
                       <Minus className="w-3.5 h-3.5" />
                     </button>
@@ -210,9 +214,10 @@ export default function IntroModal({ onDone }: Props) {
                       value={form.capacity}
                       onChange={e => set("capacity", e.target.value)}
                       placeholder="0"
-                      className="text-center bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      disabled={submitting}
+                      className="text-center bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
                     />
-                    <button onClick={() => adjustCapacity(10)}
+                    <button onClick={() => adjustCapacity(10)} disabled={submitting}
                       className="w-9 h-9 rounded-lg border border-[#3f3f46] bg-[#18181b] text-zinc-400 hover:text-white hover:border-zinc-500 flex items-center justify-center transition-all">
                       <Plus className="w-3.5 h-3.5" />
                     </button>
@@ -220,15 +225,17 @@ export default function IntroModal({ onDone }: Props) {
                 </div>
 
                 <div className="flex gap-2">
-                  <button onClick={goBack}
-                    className="px-4 py-3 rounded-xl border border-[#3f3f46] text-zinc-400 hover:text-white text-sm transition-colors">
+                  <button onClick={goBack} disabled={submitting}
+                    className="px-4 py-3 rounded-xl border border-[#3f3f46] text-zinc-400 hover:text-white text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Back
                   </button>
                   <button
-                    onClick={() => valid && onDone({ ...form, type: effectiveType })}
-                    disabled={!valid}
-                    className="flex-1 bg-[#3b5bdb] hover:bg-[#4c6ef5] disabled:opacity-30 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl py-3 transition-colors">
-                    Start →
+                    onClick={() => { if (!valid || submitting) return; setSubmitting(true); onDone({ ...form, type: effectiveType }); }}
+                    disabled={!valid || submitting}
+                    className="flex-1 bg-[#3b5bdb] hover:bg-[#4c6ef5] disabled:opacity-30 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl py-3 transition-colors flex items-center justify-center gap-2">
+                    {submitting ? (
+                      <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Setting up...</>
+                    ) : "Start →"}
                   </button>
                 </div>
               </motion.div>
