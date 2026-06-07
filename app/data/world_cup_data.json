@@ -1,0 +1,45 @@
+{
+  "venues": [
+    {"id": "v1", "name": "MetLife Stadium", "city": "East Rutherford, NJ", "capacity": 82500, "lat": 40.8135, "lon": -74.0745, "group_stage_matches": 6, "knockout_matches": 3},
+    {"id": "v2", "name": "SoFi Stadium", "city": "Inglewood, CA", "capacity": 70240, "lat": 33.9535, "lon": -118.3392, "group_stage_matches": 7, "knockout_matches": 2},
+    {"id": "v3", "name": "AT&T Stadium", "city": "Arlington, TX", "capacity": 80000, "lat": 32.7473, "lon": -97.0945, "group_stage_matches": 6, "knockout_matches": 3},
+    {"id": "v4", "name": "Hard Rock Stadium", "city": "Miami Gardens, FL", "capacity": 65326, "lat": 25.9580, "lon": -80.2389, "group_stage_matches": 6, "knockout_matches": 2},
+    {"id": "v5", "name": "Levi's Stadium", "city": "Santa Clara, CA", "capacity": 68500, "lat": 37.4033, "lon": -121.9694, "group_stage_matches": 5, "knockout_matches": 2},
+    {"id": "v6", "name": "Lincoln Financial Field", "city": "Philadelphia, PA", "capacity": 69796, "lat": 39.9008, "lon": -75.1675, "group_stage_matches": 6, "knockout_matches": 2},
+    {"id": "v7", "name": "Arrowhead Stadium", "city": "Kansas City, MO", "capacity": 76416, "lat": 39.0489, "lon": -94.4839, "group_stage_matches": 5, "knockout_matches": 2},
+    {"id": "v8", "name": "Geodis Park", "city": "Nashville, TN", "capacity": 30000, "lat": 36.1299, "lon": -86.7717, "group_stage_matches": 5, "knockout_matches": 1},
+    {"id": "v9", "name": "Seattle Sounders FC Stadium", "city": "Seattle, WA", "capacity": 37722, "lat": 47.5952, "lon": -122.3316, "group_stage_matches": 5, "knockout_matches": 1},
+    {"id": "v10", "name": "BC Place", "city": "Vancouver, BC", "capacity": 54500, "lat": 49.2769, "lon": -123.1118, "group_stage_matches": 6, "knockout_matches": 2},
+    {"id": "v11", "name": "BMO Field", "city": "Toronto, ON", "capacity": 45736, "lat": 43.6333, "lon": -79.4186, "group_stage_matches": 6, "knockout_matches": 2},
+    {"id": "v12", "name": "Estadio Azteca", "city": "Mexico City, MX", "capacity": 83714, "lat": 19.3029, "lon": -99.1504, "group_stage_matches": 6, "knockout_matches": 2},
+    {"id": "v13", "name": "Estadio AKRON", "city": "Guadalajara, MX", "capacity": 46232, "lat": 20.6697, "lon": -103.4763, "group_stage_matches": 5, "knockout_matches": 1},
+    {"id": "v14", "name": "Estadio Monterrey", "city": "Monterrey, MX", "capacity": 51530, "lat": 25.6694, "lon": -100.3119, "group_stage_matches": 5, "knockout_matches": 1}
+  ],
+  "teams": [
+    {"name": "Brazil", "group": "A", "fan_density": "high", "expected_travel": 50000},
+    {"name": "Argentina", "group": "B", "fan_density": "high", "expected_travel": 45000},
+    {"name": "France", "group": "C", "fan_density": "high", "expected_travel": 40000},
+    {"name": "England", "group": "D", "fan_density": "high", "expected_travel": 55000},
+    {"name": "Germany", "group": "E", "fan_density": "high", "expected_travel": 35000},
+    {"name": "Spain", "group": "F", "fan_density": "high", "expected_travel": 38000},
+    {"name": "USA", "group": "G", "fan_density": "very_high", "expected_travel": 80000},
+    {"name": "Mexico", "group": "H", "fan_density": "very_high", "expected_travel": 70000},
+    {"name": "Portugal", "group": "A", "fan_density": "medium", "expected_travel": 25000},
+    {"name": "Netherlands", "group": "B", "fan_density": "medium", "expected_travel": 22000},
+    {"name": "Japan", "group": "C", "fan_density": "medium", "expected_travel": 20000},
+    {"name": "Morocco", "group": "D", "fan_density": "medium", "expected_travel": 18000},
+    {"name": "Colombia", "group": "E", "fan_density": "medium", "expected_travel": 20000},
+    {"name": "Uruguay", "group": "F", "fan_density": "medium", "expected_travel": 15000},
+    {"name": "Canada", "group": "G", "fan_density": "medium", "expected_travel": 30000},
+    {"name": "Ecuador", "group": "H", "fan_density": "low", "expected_travel": 10000}
+  ],
+  "sample_matches": [
+    {"match_id": "m001", "date": "2026-06-11", "home": "USA", "away": "Mexico", "venue_id": "v12", "stage": "Group G", "expected_attendance": 83000},
+    {"match_id": "m002", "date": "2026-06-14", "home": "Brazil", "away": "England", "venue_id": "v1", "stage": "Group A", "expected_attendance": 82000},
+    {"match_id": "m003", "date": "2026-06-17", "home": "Argentina", "away": "France", "venue_id": "v3", "stage": "Group B", "expected_attendance": 79000},
+    {"match_id": "m004", "date": "2026-06-20", "home": "Germany", "away": "Spain", "venue_id": "v2", "stage": "Group E", "expected_attendance": 69000},
+    {"match_id": "m005", "date": "2026-06-23", "home": "Portugal", "away": "Japan", "venue_id": "v6", "stage": "Group C", "expected_attendance": 68000},
+    {"match_id": "m006", "date": "2026-07-05", "home": "TBD", "away": "TBD", "venue_id": "v1", "stage": "Quarterfinal", "expected_attendance": 82500},
+    {"match_id": "m007", "date": "2026-07-14", "home": "TBD", "away": "TBD", "venue_id": "v1", "stage": "Final", "expected_attendance": 82500}
+  ]
+}
