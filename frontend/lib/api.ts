@@ -56,18 +56,11 @@ export async function sendMessageStream(
 export interface BusinessProfile { name: string; type: string; city: string; capacity: string; }
 
 export async function setupBusiness(sessionId: string, business: BusinessProfile): Promise<void> {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), 8000);
-  try {
-    await fetch(`${BASE}/api/setup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: sessionId, ...business }),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(t);
-  }
+  await fetch(`${BASE}/api/setup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, ...business }),
+  });
 }
 
 export async function resetSession(sessionId: string): Promise<void> {
