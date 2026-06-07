@@ -30,6 +30,7 @@ export default function Home() {
   const [business, setBusiness]         = useState<BusinessProfile | undefined>();
   const [setupPending, setSetupPending] = useState(false);
   const [setupDone, setSetupDone]       = useState(false);
+  const [connected, setConnected]       = useState(false);
 
   const runSetup = (biz: BusinessProfile) => {
     setSetupPending(true);
@@ -39,6 +40,7 @@ export default function Home() {
       .finally(() => {
         setSetupPending(false);
         setSetupDone(true);
+        setConnected(true);
         setTimeout(() => setSetupDone(false), 4000);
       });
   };
@@ -164,6 +166,12 @@ export default function Home() {
               <h1 className="text-white font-black text-xl tracking-tight leading-none">
                 {business ? business.name : "World Cup Biz AI"}
               </h1>
+              {connected && !setupPending && (
+                <span className="flex items-center gap-1 bg-green-500/20 border border-green-500/30 text-green-300 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                  Connected
+                </span>
+              )}
               {business && (
                 <button onClick={() => setShowIntro(true)} className="text-white/40 hover:text-white transition-colors" title="Edit business details">
                   <Pencil className="w-3.5 h-3.5" />

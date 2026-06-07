@@ -86,8 +86,20 @@ async def chat_stream(req: ChatRequest):
     agent = _get_agent(req.session_id)
 
     async def event_gen():
-        async for event in agent.chat_stream(req.message):
-            yield f"data: {json.dumps(event)}\n\n"
+        import asyncio
+        stream = agent.chat_stream(req.message).__aiter__()
+        while True:
+            try:
+                task = asyncio.ensure_future(stream.__anext__())
+                # Send keepalive every 5s while waiting for next event
+                while not task.done():
+                    await asyncio.sleep(5)
+                    if not task.done():
+                        yield ": keepalive\n\n"
+                event = task.result()
+                yield f"data: {json.dumps(event)}\n\n"
+            except StopAsyncIteration:
+                break
         yield 'data: {"type":"done"}\n\n'
 
     return StreamingResponse(
