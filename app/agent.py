@@ -214,16 +214,23 @@ class MatchDayAgent:
 
     async def chat_stream(self, user_message: str):
         """Yield SSE-style dicts: tool call events then the final text."""
+        import asyncio
         self.history.append(types.Content(
             role="user",
             parts=[types.Part(text=user_message)],
         ))
 
+        loop = asyncio.get_event_loop()
+
         while True:
-            response = self._client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=self.history,
-                config=self._config,
+            # Run blocking Gemini call in thread pool so event loop stays free
+            response = await loop.run_in_executor(
+                None,
+                lambda: self._client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=self.history,
+                    config=self._config,
+                )
             )
 
             candidate = response.candidates[0]
