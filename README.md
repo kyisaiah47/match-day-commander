@@ -34,7 +34,7 @@ MatchDayAgent (app/agent.py)
 
 ### 1. Clone & install
 ```bash
-git clone https://github.com/your-username/match-day-commander
+git clone https://github.com/kyisaiah47/match-day-commander
 cd match-day-commander
 pip install -r requirements.txt
 ```
