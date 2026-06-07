@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Database, Zap, BarChart3, BookMarked, ChevronRight } from "lucide-react";
+import { X, Database, Zap, BarChart3, BookMarked, ChevronRight, Minus, Plus } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import WaveLogo from "./WaveLogo";
 import { BusinessProfile } from "@/lib/api";
 
@@ -38,12 +40,16 @@ export default function IntroModal({ onDone }: Props) {
   const [step, setStep] = useState(1);
   const [dir, setDir] = useState(1);
   const [form, setForm] = useState<BusinessProfile>({ name: "", type: "", city: "", capacity: "" });
+  const [otherType, setOtherType] = useState("");
 
   const goNext = () => { setDir(1); setStep(2); };
   const goBack = () => { setDir(-1); setStep(1); };
 
   const set = (k: keyof BusinessProfile, v: string) => setForm(f => ({ ...f, [k]: v }));
-  const valid = form.name.trim() && form.type && form.city;
+  const effectiveType = form.type === "Other" ? otherType.trim() : form.type;
+  const valid = form.name.trim() && effectiveType && form.city;
+  const capacity = parseInt(form.capacity || "0");
+  const adjustCapacity = (delta: number) => set("capacity", String(Math.max(0, capacity + delta)));
 
   return (
     <motion.div
@@ -149,12 +155,11 @@ export default function IntroModal({ onDone }: Props) {
                 {/* Business name */}
                 <div className="mb-4">
                   <label className="text-zinc-400 text-xs font-semibold mb-1.5 block">Business name *</label>
-                  <input
-                    type="text"
+                  <Input
                     value={form.name}
                     onChange={e => set("name", e.target.value)}
                     placeholder="e.g. Touchdown Tacos"
-                    className="w-full bg-[#18181b] border border-[#3f3f46] focus:border-[#3b5bdb] focus:ring-1 focus:ring-[#3b5bdb] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 outline-none transition-all"
+                    className="bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb]"
                   />
                 </div>
 
@@ -173,31 +178,55 @@ export default function IntroModal({ onDone }: Props) {
                       </button>
                     ))}
                   </div>
+                  {form.type === "Other" && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-2 overflow-hidden">
+                      <Input
+                        value={otherType}
+                        onChange={e => setOtherType(e.target.value)}
+                        placeholder="Describe your business type..."
+                        className="bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb]"
+                      />
+                    </motion.div>
+                  )}
                 </div>
 
                 {/* Venue city */}
                 <div className="mb-4">
                   <label className="text-zinc-400 text-xs font-semibold mb-1.5 block">Nearest World Cup venue *</label>
-                  <select
-                    value={form.city}
-                    onChange={e => set("city", e.target.value)}
-                    className="w-full bg-[#18181b] border border-[#3f3f46] focus:border-[#3b5bdb] rounded-lg px-3 py-2.5 text-sm text-white outline-none transition-all appearance-none"
-                  >
-                    <option value="" disabled>Select a host city...</option>
-                    {HOST_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                  <Select value={form.city} onValueChange={(v: string | null) => v && set("city", v)}>
+                    <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white focus:ring-[#3b5bdb]">
+                      <SelectValue placeholder="Select a host city..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white">
+                      {HOST_CITIES.map(c => (
+                        <SelectItem key={c} value={c} className="focus:bg-[#3b5bdb]/20 focus:text-white">{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* Capacity (optional) */}
+                {/* Capacity stepper */}
                 <div className="mb-5">
-                  <label className="text-zinc-400 text-xs font-semibold mb-1.5 block">Seating capacity <span className="text-zinc-600 font-normal">(optional)</span></label>
-                  <input
-                    type="number"
-                    value={form.capacity}
-                    onChange={e => set("capacity", e.target.value)}
-                    placeholder="e.g. 80"
-                    className="w-full bg-[#18181b] border border-[#3f3f46] focus:border-[#3b5bdb] focus:ring-1 focus:ring-[#3b5bdb] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 outline-none transition-all"
-                  />
+                  <label className="text-zinc-400 text-xs font-semibold mb-1.5 block">
+                    Seating capacity <span className="text-zinc-600 font-normal">(optional)</span>
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => adjustCapacity(-10)}
+                      className="w-9 h-9 rounded-lg border border-[#3f3f46] bg-[#18181b] text-zinc-400 hover:text-white hover:border-zinc-500 flex items-center justify-center transition-all">
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <Input
+                      type="number"
+                      value={form.capacity}
+                      onChange={e => set("capacity", e.target.value)}
+                      placeholder="0"
+                      className="text-center bg-[#18181b] border-[#3f3f46] text-white placeholder:text-zinc-600 focus-visible:ring-[#3b5bdb]"
+                    />
+                    <button onClick={() => adjustCapacity(10)}
+                      className="w-9 h-9 rounded-lg border border-[#3f3f46] bg-[#18181b] text-zinc-400 hover:text-white hover:border-zinc-500 flex items-center justify-center transition-all">
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex gap-2">
@@ -206,7 +235,7 @@ export default function IntroModal({ onDone }: Props) {
                     Back
                   </button>
                   <button
-                    onClick={() => valid && onDone(form)}
+                    onClick={() => valid && onDone({ ...form, type: effectiveType })}
                     disabled={!valid}
                     className="flex-1 bg-[#3b5bdb] hover:bg-[#4c6ef5] disabled:opacity-30 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl py-3 transition-colors">
                     Start →
