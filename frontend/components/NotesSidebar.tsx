@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { X, Trash2, Cloud, CloudOff, Loader, CalendarDays, ChevronDown } from "lucide-react";
+import { X, Cloud, CloudOff, Loader, CalendarDays, ChevronDown } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -90,11 +90,7 @@ export default function NotesSidebar({ onClose }: Props) {
 
         {/* General tab */}
         <TabsContent value="general" className="flex flex-col flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
-          <div className="flex justify-end px-3 pt-2 flex-shrink-0">
-            <button onClick={() => updateGeneral("")} className="text-zinc-700 hover:text-zinc-400 transition-colors flex items-center gap-1 text-[10px]">
-              <Trash2 className="w-3 h-3" /> Clear
-            </button>
-          </div>
+          <div className="pt-2 flex-shrink-0" />
           <textarea
             value={general}
             onChange={e => updateGeneral(e.target.value)}
@@ -122,9 +118,6 @@ export default function NotesSidebar({ onClose }: Props) {
                 />
               </PopoverContent>
             </Popover>
-            <button onClick={() => updateDated("")} className="text-zinc-700 hover:text-zinc-400 transition-colors flex items-center gap-1 text-[10px]">
-              <Trash2 className="w-3 h-3" /> Clear
-            </button>
           </div>
           <textarea
             key={dateKey}
