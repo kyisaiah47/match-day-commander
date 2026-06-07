@@ -87,7 +87,7 @@ export default function Home() {
       <AnimatePresence>
         {showIntro && (
           <IntroModal onDone={async (biz) => {
-            await setupBusiness(SESSION_ID, biz);
+            try { await setupBusiness(SESSION_ID, biz); } catch { /* backend cold start, continue anyway */ }
             setBusiness(biz);
             setMessages([{ id: "w", role: "agent", text: buildWelcome(biz) }]);
             setShowIntro(false);
