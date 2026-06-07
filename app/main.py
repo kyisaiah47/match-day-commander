@@ -97,6 +97,31 @@ async def chat_stream(req: ChatRequest):
     )
 
 
+class NotesRequest(BaseModel):
+    user_id: str
+    content: str
+
+
+@app.post("/api/notes")
+async def save_notes(req: NotesRequest):
+    from app.tools.mongodb_tools import _db
+    db = _db()
+    await db.notes.update_one(
+        {"user_id": req.user_id},
+        {"$set": {"content": req.content, "updated_at": __import__("datetime").datetime.utcnow().isoformat()}},
+        upsert=True,
+    )
+    return JSONResponse({"status": "ok"})
+
+
+@app.get("/api/notes")
+async def get_notes(user_id: str):
+    from app.tools.mongodb_tools import _db
+    db = _db()
+    doc = await db.notes.find_one({"user_id": user_id}, {"_id": 0})
+    return JSONResponse({"content": doc["content"] if doc else ""})
+
+
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "model": "gemini-2.5-flash"}

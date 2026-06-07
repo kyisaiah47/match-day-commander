@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import ChatMessage from "@/components/ChatMessage";
 import TypingIndicator from "@/components/TypingIndicator";
 import IntroModal from "@/components/IntroModal";
+import NotesSidebar from "@/components/NotesSidebar";
 import { sendMessageStream, resetSession, setupBusiness, BusinessProfile } from "@/lib/api";
-import { Send, RotateCcw, CalendarDays, Megaphone, Users, Zap, Pencil } from "lucide-react";
+import { Send, CalendarDays, Megaphone, Users, Zap, Pencil, NotebookPen } from "lucide-react";
 import WaveLogo from "@/components/WaveLogo";
 
 const SESSION_ID = `session_${Math.random().toString(36).slice(2)}`;
@@ -26,11 +27,7 @@ const buildWelcome = (biz?: BusinessProfile) =>
 interface Message { id: string; role: "user" | "agent"; text: string; }
 
 export default function Home() {
-  const savedBiz = typeof window !== "undefined"
-    ? (() => { try { const s = localStorage.getItem("wcbiz_profile"); return s ? JSON.parse(s) as BusinessProfile : undefined; } catch { return undefined; } })()
-    : undefined;
-
-  const [business, setBusiness]         = useState<BusinessProfile | undefined>(savedBiz);
+  const [business, setBusiness]         = useState<BusinessProfile | undefined>();
   const [setupPending, setSetupPending] = useState(false);
   const [setupDone, setSetupDone]       = useState(false);
   const [setupMsgIdx, setSetupMsgIdx]   = useState(0);
@@ -47,28 +44,41 @@ export default function Home() {
     const t = setInterval(() => setSetupMsgIdx(i => (i + 1) % SETUP_MSGS.length), 1800);
     return () => clearInterval(t);
   }, [setupPending, SETUP_MSGS.length]);
-  const [messages, setMessages]         = useState<Message[]>([{ id: "w", role: "agent", text: buildWelcome(savedBiz) }]);
+  const [messages, setMessages]         = useState<Message[]>([{ id: "w", role: "agent", text: buildWelcome() }]);
   const [input, setInput]               = useState("");
   const [loading, setLoading]           = useState(false);
   const [toolSteps, setToolSteps]       = useState<string[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showIntro, setShowIntro]       = useState(!savedBiz);
+  const [showNotes, setShowNotes]       = useState(false);
+  const [showIntro, setShowIntro]       = useState(false);
+  const [hydrated, setHydrated]         = useState(false);
   const bottomRef   = useRef<HTMLDivElement>(null);
   const textRef     = useRef<HTMLTextAreaElement>(null);
   const inputWrap   = useRef<HTMLDivElement>(null);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
-  // Re-hydrate agent context on page load if profile is cached
+  // Read localStorage after mount to avoid SSR/client mismatch
   useEffect(() => {
-    if (savedBiz) {
-      setSetupPending(true);
-      setupBusiness(SESSION_ID, savedBiz).catch(() => {}).finally(() => {
-        setSetupPending(false);
-        setSetupDone(true);
-        setTimeout(() => setSetupDone(false), 4000);
-      });
+    try {
+      const s = localStorage.getItem("wcbiz_profile");
+      const saved = s ? JSON.parse(s) as BusinessProfile : undefined;
+      if (saved) {
+        setBusiness(saved);
+        setMessages([{ id: "w", role: "agent", text: buildWelcome(saved) }]);
+        setSetupPending(true);
+        setupBusiness(SESSION_ID, saved).catch(() => {}).finally(() => {
+          setSetupPending(false);
+          setSetupDone(true);
+          setTimeout(() => setSetupDone(false), 4000);
+        });
+      } else {
+        setShowIntro(true);
+      }
+    } catch {
+      setShowIntro(true);
     }
+    setHydrated(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -118,7 +128,7 @@ export default function Home() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#09090b]">
       <AnimatePresence>
-        {showIntro && (
+        {hydrated && showIntro && (
           <IntroModal initial={business} onClose={() => setShowIntro(false)} onDone={(biz) => {
             setShowIntro(false);
             setBusiness(biz);
@@ -174,8 +184,12 @@ export default function Home() {
           ))}
         </div>
 
-        <button onClick={handleReset} className="text-white/60 hover:text-white transition-colors ml-4" title="New chat">
-          <RotateCcw className="w-4 h-4" />
+        <button
+          onClick={() => setShowNotes(n => !n)}
+          className={`transition-colors ml-4 ${showNotes ? "text-white" : "text-white/60 hover:text-white"}`}
+          title="Notes"
+        >
+          <NotebookPen className="w-4 h-4" />
         </button>
       </div>
 
@@ -214,7 +228,10 @@ export default function Home() {
         )}
       </AnimatePresence>
 
+      {/* ── Chat + Notes ───────────────────────────────────── */}
+      <div className="flex flex-1 overflow-hidden">
       {/* ── Messages ───────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto chat-scroll px-6 py-6">
         <div className="flex flex-col gap-4">
           <AnimatePresence initial={false}>
@@ -283,6 +300,14 @@ export default function Home() {
         </div>
         <p className="text-center text-[10px] text-zinc-600 mt-2">Google Cloud Rapid Agent Hackathon 2026 · MongoDB Partner Track</p>
       </div>
+      </div>{/* end messages col */}
+
+      {/* ── Notes sidebar ──────────────────────────────────── */}
+      <AnimatePresence>
+        {showNotes && <NotesSidebar onClose={() => setShowNotes(false)} />}
+      </AnimatePresence>
+
+      </div>{/* end chat + notes row */}
     </div>
   );
 }
