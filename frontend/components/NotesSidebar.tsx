@@ -110,7 +110,7 @@ export default function NotesSidebar({ onClose }: Props) {
               selected={date}
               onSelect={setDate}
               disabled={d => d < WC_START || d > WC_END}
-              className="w-full p-0 [--cell-size:--spacing(6)] bg-transparent"
+              className="scale-[0.78] origin-top-left w-[128.2%] p-0 [--cell-size:--spacing(6)] bg-transparent"
             />
           </div>
           <div className="flex justify-between items-center px-3 pt-2 flex-shrink-0">
