@@ -1,84 +1,139 @@
-# Match Day Commander ⚽
+# World Cup Biz AI ⚽
 
-> AI agent for local businesses near FIFA World Cup 2026 venues — powered by **Gemini** and **MongoDB Atlas**.
+> AI agent for local businesses near FIFA World Cup 2026 venues — powered by **Gemini 2.5 Flash** and **MongoDB Atlas**.
 
-Built for the [Google Cloud Rapid Agent Hackathon](https://googlecloudrapidagent.devpost.com/) — **MongoDB Partner Track**.
+**Live:** [worldcupbizai.vercel.app](https://worldcupbizai.vercel.app) · Built for the [Google Cloud Rapid Agent Hackathon](https://googlecloudrapidagent.devpost.com/) — MongoDB Partner Track.
+
+---
 
 ## What It Does
 
-Match Day Commander is a multi-step AI agent that helps brick-and-mortar businesses maximize revenue on World Cup match days. Instead of just answering questions, it executes tasks:
+Local businesses near World Cup venues — restaurants, bars, hotels, retail — have a massive revenue opportunity during match days but no system to act on it. World Cup Biz AI is a personalized AI agent that gives them the tools to prepare.
 
-1. **Crowd Intelligence** — queries MongoDB Atlas for match schedules, expected attendance, and fan demographic breakdowns per venue city
-2. **Campaign Generation** — creates targeted social media posts, email copy, and SMS offers tailored to the teams playing and expected crowd size
-3. **Operations Planning** — recommends specific staffing levels and inventory increases based on crowd forecast data
-4. **Persistent Memory** — saves all campaigns and recommendations to MongoDB Atlas for retrieval and tracking
+Enter your business details once. The agent tailors everything to you:
+
+- **Crowd Intelligence** — match schedules, expected attendance, and fan demographics per venue city from MongoDB Atlas
+- **Campaign Generation** — targeted social media posts, email copy, and SMS offers based on the teams playing and expected crowd
+- **Operations Planning** — specific staffing levels and inventory boosts based on your capacity and the crowd forecast
+- **Match Day Notes** — built-in notes sidebar with general and date-specific notes, synced to MongoDB
+- **Persistent Memory** — campaigns and recommendations saved to MongoDB Atlas automatically
+
+---
 
 ## Architecture
 
 ```
-Browser UI (HTML/JS)
-      │ POST /api/chat
+Next.js Frontend (Vercel)
+      │ SSE stream
       ▼
-FastAPI Server (app/main.py)
+FastAPI Backend (Google Cloud Run)
       │
       ▼
-MatchDayAgent (app/agent.py)
-  ├── Gemini 2.0 Flash (function calling)
-  └── MongoDB Tools (app/tools/mongodb_tools.py)
-        └── MongoDB Atlas (venues, matches, teams, businesses, campaigns)
+Gemini 2.5 Flash Agent (function calling)
+      │
+      ├── get_matches_at_venue()
+      ├── get_crowd_forecast()
+      ├── get_business_profile()
+      ├── save_campaign()
+      ├── save_recommendation()
+      └── ...
+      │
+      ▼
+MongoDB Atlas (Motor async driver)
+  ├── venues, matches, teams
+  ├── businesses
+  ├── campaigns
+  ├── analytics (recommendations)
+  └── notes
 ```
 
-**Partner Integration:** MongoDB Atlas is used as the agent's persistent memory layer. The agent reads match and venue data, writes campaigns and recommendations, and retrieves history — all via async Motor (MongoDB async Python driver) calls wired as Gemini function-calling tools.
+The agent streams tool call events to the frontend in real time — users see each MongoDB query fire as it happens. Gemini runs in a thread pool executor so the event loop stays free during inference.
 
-## Quick Start
+---
 
-### 1. Clone & install
+## Running Locally
+
+### Backend
+
 ```bash
-git clone https://github.com/kyisaiah47/match-day-commander
-cd match-day-commander
+# Install dependencies
 pip install -r requirements.txt
-```
 
-### 2. Configure environment
-```bash
+# Configure environment
 cp .env.example .env
-# Edit .env with your API keys
-```
+# Add: GOOGLE_API_KEY, MONGODB_URI, MONGODB_DB
 
-You need:
-- `GOOGLE_API_KEY` — [Google AI Studio](https://aistudio.google.com/app/apikey)
-- `MONGODB_URI` — [MongoDB Atlas](https://cloud.mongodb.com) free tier (M0) connection string
-
-### 3. Seed the database
-```bash
+# Seed the database
 python -m app.data.seed_data
+
+# Start the API
+uvicorn app.main:app --reload --port 8001
 ```
 
-### 4. Run
+### Frontend
+
 ```bash
-uvicorn app.main:app --reload
+cd frontend
+npm install
+
+# Configure environment
+cp .env.local.example .env.local
+# Add: NEXT_PUBLIC_API_URL=http://localhost:8001
+
+npm run dev
 ```
 
-Open `http://localhost:8000`
+---
 
 ## Example Prompts
 
-- *"What matches are coming to East Rutherford, NJ?"*
-- *"Create a social media campaign for Touchdown Tacos on June 14th"*
-- *"How should The Pitch Bar staff up for the Germany vs Spain match?"*
-- *"What's the crowd forecast for Inglewood on June 20th?"*
-- *"List all campaigns I've saved for Touchdown Tacos"*
+- *"Germany vs Brazil is coming to East Rutherford on June 14th. Create a social media campaign for my restaurant and tell me how many extra staff I need."*
+- *"Which World Cup matches are coming to Dallas, TX and how big are the crowds expected to be?"*
+- *"There's a match this weekend with 80,000 fans. Give me a full staffing and inventory plan."*
+- *"What's the fan breakdown for the next match in my city? Which nationalities, peak hours, and what should I prepare for?"*
 
-## Deploy to Google Cloud Run
+---
+
+## Deploy
+
+### Backend → Google Cloud Run
 
 ```bash
-# Set secrets in Secret Manager first
-gcloud secrets create google-api-key --data-file=- <<< "$GOOGLE_API_KEY"
-gcloud secrets create mongodb-uri --data-file=- <<< "$MONGODB_URI"
+# Enable Secret Manager and create secrets
+gcloud services enable secretmanager.googleapis.com
+echo -n "$GOOGLE_API_KEY" | gcloud secrets create google-api-key --data-file=-
+echo -n "$MONGODB_URI" | gcloud secrets create mongodb-uri --data-file=-
+
+# Grant access
+gcloud secrets add-iam-policy-binding google-api-key \
+  --member="serviceAccount:YOUR_PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
 
 # Deploy
 gcloud builds submit --config deployment/cloudbuild.yaml
 ```
+
+### Frontend → Vercel
+
+```bash
+cd frontend
+vercel --prod
+```
+
+Set `NEXT_PUBLIC_API_URL` to your Cloud Run service URL in Vercel environment variables.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| AI | Gemini 2.5 Flash (Google AI) |
+| Backend | Python, FastAPI, Google Cloud Run |
+| Database | MongoDB Atlas, Motor (async driver) |
+| Frontend | Next.js 16, Tailwind CSS, shadcn/ui |
+| Hosting | Vercel (frontend), Google Cloud Run (API) |
+| Streaming | Server-Sent Events (SSE) |
 
 ## License
 
