@@ -14,7 +14,7 @@ from app.agent import MatchDayAgent
 
 load_dotenv()
 
-app = FastAPI(title="Match Day Commander")
+app = FastAPI(title="World Cup Biz AI")
 
 app.add_middleware(
     CORSMiddleware,

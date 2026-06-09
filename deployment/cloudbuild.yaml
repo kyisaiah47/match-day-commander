@@ -13,8 +13,8 @@ steps:
       - '--region=us-central1'
       - '--platform=managed'
       - '--allow-unauthenticated'
-      - '--set-env-vars=MONGODB_DB=matchday'
-      - '--set-secrets=GOOGLE_API_KEY=google-api-key:latest,MONGODB_URI=mongodb-uri:latest'
+      - '--set-env-vars=MONGODB_DB=matchday,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=us-central1'
+      - '--set-secrets=MONGODB_URI=mongodb-uri:latest'
 
 images:
   - 'gcr.io/$PROJECT_ID/match-day-commander'

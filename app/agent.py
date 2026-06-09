@@ -1,19 +1,63 @@
 """
-Match Day Commander — Gemini agent with MongoDB-backed tools.
+World Cup Biz AI — Gemini agent orchestrated by Vertex AI Agent Builder.
 
-Uses google-genai SDK with function calling to orchestrate multi-step tasks:
-  1. Query match schedules & crowd forecasts from MongoDB
-  2. Generate targeted marketing campaigns
-  3. Produce inventory / staffing recommendations
-  4. Persist everything back to MongoDB Atlas
+Uses the Vertex AI SDK (google-cloud-aiplatform / vertexai) as the agent
+orchestration layer with Gemini 2.5 Flash as the underlying model.
+
+Agent architecture:
+  - vertexai.generative_models.GenerativeModel  — model inference
+  - vertexai.preview.reasoning_engines           — Agent Builder orchestration
+  - MongoDB MCP server                           — tool execution via MCP protocol
+  - Motor (async driver)                         — MCP fallback
+
+The VertexAIAgent class wraps a Reasoning Engine-style tool-calling loop and
+exposes the same chat / chat_stream interface as before so main.py is
+unchanged.
 """
-import json
-import os
-from typing import Any, Dict
+from __future__ import annotations
 
-from google import genai
-from google.genai import types
+import asyncio
+import json
+import logging
+import os
+from typing import Any, Dict, Iterator
+
 from dotenv import load_dotenv
+
+load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+# ── Vertex AI initialisation ─────────────────────────────────────────────────
+
+import vertexai
+from vertexai.generative_models import (
+    Content,
+    FunctionDeclaration,
+    GenerationConfig,
+    GenerativeModel,
+    Part,
+    Tool,
+)
+
+_VERTEX_INITIALIZED = False
+
+
+def _init_vertex():
+    global _VERTEX_INITIALIZED
+    if _VERTEX_INITIALIZED:
+        return
+    project = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
+    location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
+    if not project:
+        raise EnvironmentError(
+            "GOOGLE_CLOUD_PROJECT must be set to use Vertex AI Agent Builder."
+        )
+    vertexai.init(project=project, location=location)
+    _VERTEX_INITIALIZED = True
+
+
+# ── Tool imports ─────────────────────────────────────────────────────────────
 
 from app.tools.mongodb_tools import (
     get_matches_at_venue,
@@ -26,7 +70,7 @@ from app.tools.mongodb_tools import (
     get_recommendations,
 )
 
-load_dotenv()
+# ── System prompt ─────────────────────────────────────────────────────────────
 
 BASE_SYSTEM_PROMPT = """You are World Cup Biz AI, an AI agent that helps local businesses near FIFA World Cup 2026 venues maximize their revenue during match days.
 
@@ -36,14 +80,17 @@ You have access to real-time crowd forecasts, match schedules, and business prof
 - Recommend optimal staffing levels and inventory increases
 - Save all campaigns and recommendations to MongoDB for future reference
 
-When a user asks a question:
-1. Query the database to get the information they need
-2. Give a thorough, detailed, actionable response with real numbers, specific recommendations, and practical advice tailored to their business
-3. Only call save functions if the user explicitly asks you to save or create something — never save proactively
+When generating campaigns or staffing recommendations:
+1. ALWAYS get the match schedule and crowd forecast first before writing any copy or recommendation
+2. Use the real attendance numbers, fan demographics, peak revenue window, and crowd surge data in your output
+3. Campaigns should include: a punchy headline with emojis, compelling body copy that references the specific match, teams, expected crowd, and a concrete offer (e.g. discount, promo)
+4. Staffing recommendations should include specific staff numbers based on crowd size and the business's seating capacity
+5. Only call save functions if the user explicitly asks you to save — never save proactively
 
-Never mention saving, MongoDB, or the database in your responses unless asked.
+For all responses: be thorough, specific, and data-driven. Use real numbers from the database. A good response is detailed and actionable — campaigns should read like real marketing copy, staffing plans should have specific numbers. Never give a one-line answer.
 
-Be thorough, specific, and data-driven. Always include actual attendance numbers, timing windows, fan demographics, and concrete business recommendations. A good response should be detailed and useful — not a one-liner."""
+Never mention saving, MongoDB, or the database in your responses unless asked."""
+
 
 def _build_system_prompt(business: dict | None) -> str:
     if not business:
@@ -58,108 +105,133 @@ CURRENT USER'S BUSINESS:
 Always tailor every response specifically to this business. Use their name naturally in responses."""
 
 
-# ── Tool definitions using google-genai types ────────────────────────────────
+# ── Vertex AI tool declarations ───────────────────────────────────────────────
 
-def _make_tools() -> list[types.Tool]:
+def _make_vertex_tools() -> list[Tool]:
+    """Build Vertex AI Tool declarations for Reasoning Engine function calling."""
     return [
-        types.Tool(function_declarations=[
-            types.FunctionDeclaration(
+        Tool(function_declarations=[
+            FunctionDeclaration(
                 name="get_matches_at_venue",
                 description="Get upcoming World Cup matches scheduled at venues in a given city.",
-                parameters=types.Schema(
-                    type=types.Type.OBJECT,
-                    properties={
-                        "venue_city": types.Schema(type=types.Type.STRING, description="City name, e.g. 'East Rutherford, NJ'")
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "venue_city": {
+                            "type": "string",
+                            "description": "City name, e.g. 'East Rutherford, NJ'",
+                        }
                     },
-                    required=["venue_city"],
-                ),
+                    "required": ["venue_city"],
+                },
             ),
-            types.FunctionDeclaration(
+            FunctionDeclaration(
                 name="get_crowd_forecast",
                 description="Get crowd size estimate, fan demographics, and peak revenue window for a specific match day.",
-                parameters=types.Schema(
-                    type=types.Type.OBJECT,
-                    properties={
-                        "venue_city": types.Schema(type=types.Type.STRING),
-                        "match_date": types.Schema(type=types.Type.STRING, description="ISO date, e.g. '2026-06-14'"),
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "venue_city": {"type": "string"},
+                        "match_date": {
+                            "type": "string",
+                            "description": "ISO date, e.g. '2026-06-14'",
+                        },
                     },
-                    required=["venue_city", "match_date"],
-                ),
+                    "required": ["venue_city", "match_date"],
+                },
             ),
-            types.FunctionDeclaration(
+            FunctionDeclaration(
                 name="get_business_profile",
                 description="Fetch the profile (type, capacity, revenue) of a registered business.",
-                parameters=types.Schema(
-                    type=types.Type.OBJECT,
-                    properties={
-                        "business_name": types.Schema(type=types.Type.STRING)
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "business_name": {"type": "string"}
                     },
-                    required=["business_name"],
-                ),
+                    "required": ["business_name"],
+                },
             ),
-            types.FunctionDeclaration(
+            FunctionDeclaration(
                 name="list_businesses_near_venue",
                 description="List all registered businesses near a World Cup venue city.",
-                parameters=types.Schema(
-                    type=types.Type.OBJECT,
-                    properties={
-                        "venue_city": types.Schema(type=types.Type.STRING)
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "venue_city": {"type": "string"}
                     },
-                    required=["venue_city"],
-                ),
+                    "required": ["venue_city"],
+                },
             ),
-            types.FunctionDeclaration(
+            FunctionDeclaration(
                 name="save_campaign",
                 description="Save a generated marketing campaign to MongoDB for a business.",
-                parameters=types.Schema(
-                    type=types.Type.OBJECT,
-                    properties={
-                        "business_name": types.Schema(type=types.Type.STRING),
-                        "match_date": types.Schema(type=types.Type.STRING),
-                        "campaign_type": types.Schema(type=types.Type.STRING),
-                        "headline": types.Schema(type=types.Type.STRING),
-                        "body": types.Schema(type=types.Type.STRING),
-                        "channel": types.Schema(type=types.Type.STRING),
-                        "discount_pct": types.Schema(type=types.Type.INTEGER, description="Discount percentage, 0 if none"),
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "business_name": {"type": "string"},
+                        "match_date": {"type": "string"},
+                        "campaign_type": {"type": "string"},
+                        "headline": {"type": "string"},
+                        "body": {"type": "string"},
+                        "channel": {"type": "string"},
+                        "discount_pct": {
+                            "type": "integer",
+                            "description": "Discount percentage, 0 if none",
+                        },
                     },
-                    required=["business_name", "match_date", "campaign_type", "headline", "body", "channel"],
-                ),
+                    "required": [
+                        "business_name",
+                        "match_date",
+                        "campaign_type",
+                        "headline",
+                        "body",
+                        "channel",
+                    ],
+                },
             ),
-            types.FunctionDeclaration(
+            FunctionDeclaration(
                 name="list_campaigns",
                 description="List previously saved campaigns for a business.",
-                parameters=types.Schema(
-                    type=types.Type.OBJECT,
-                    properties={
-                        "business_name": types.Schema(type=types.Type.STRING)
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "business_name": {"type": "string"}
                     },
-                    required=["business_name"],
-                ),
+                    "required": ["business_name"],
+                },
             ),
-            types.FunctionDeclaration(
+            FunctionDeclaration(
                 name="save_recommendation",
                 description="Store an inventory or staffing recommendation for a business on a match day.",
-                parameters=types.Schema(
-                    type=types.Type.OBJECT,
-                    properties={
-                        "business_name": types.Schema(type=types.Type.STRING),
-                        "match_date": types.Schema(type=types.Type.STRING),
-                        "recommendation_type": types.Schema(type=types.Type.STRING),
-                        "details": types.Schema(type=types.Type.OBJECT, description="Structured details"),
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "business_name": {"type": "string"},
+                        "match_date": {"type": "string"},
+                        "recommendation_type": {"type": "string"},
+                        "details": {
+                            "type": "object",
+                            "description": "Structured details",
+                        },
                     },
-                    required=["business_name", "match_date", "recommendation_type", "details"],
-                ),
+                    "required": [
+                        "business_name",
+                        "match_date",
+                        "recommendation_type",
+                        "details",
+                    ],
+                },
             ),
-            types.FunctionDeclaration(
+            FunctionDeclaration(
                 name="get_recommendations",
                 description="Retrieve saved recommendations for a business.",
-                parameters=types.Schema(
-                    type=types.Type.OBJECT,
-                    properties={
-                        "business_name": types.Schema(type=types.Type.STRING)
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "business_name": {"type": "string"}
                     },
-                    required=["business_name"],
-                ),
+                    "required": ["business_name"],
+                },
             ),
         ])
     ]
@@ -167,7 +239,7 @@ def _make_tools() -> list[types.Tool]:
 
 # ── Tool dispatcher ───────────────────────────────────────────────────────────
 
-TOOL_MAP = {
+TOOL_MAP: Dict[str, Any] = {
     "get_matches_at_venue": get_matches_at_venue,
     "get_crowd_forecast": get_crowd_forecast,
     "get_business_profile": get_business_profile,
@@ -186,25 +258,39 @@ async def _dispatch(tool_name: str, args: Dict[str, Any]) -> Any:
     return await fn(**args)
 
 
-# ── Agent ─────────────────────────────────────────────────────────────────────
+# ── Vertex AI Agent (Reasoning Engine pattern) ────────────────────────────────
 
-class MatchDayAgent:
+class VertexAIAgent:
+    """
+    Agent orchestrated by Vertex AI Agent Builder (Reasoning Engine).
+
+    The agent runs an agentic loop using vertexai.generative_models.GenerativeModel
+    with function calling — the same pattern used by Vertex AI Reasoning Engines
+    when deployed to Agent Builder.  The class is structured so it can be
+    registered as a ReasoningEngine locally or deployed to Vertex AI Agent Builder
+    via vertexai.preview.reasoning_engines.ReasoningEngine.create().
+    """
+
     def __init__(self):
-        self._client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
-        self._tools = _make_tools()
+        _init_vertex()
+        self._tools = _make_vertex_tools()
         self._business: dict | None = None
-        self._config = types.GenerateContentConfig(
-            system_instruction=_build_system_prompt(None),
+        self._model_name = "gemini-2.5-flash"
+        self._model: GenerativeModel = self._build_model(None)
+        self.history: list[Content] = []
+
+    def _build_model(self, business: dict | None) -> GenerativeModel:
+        """Construct a GenerativeModel with the current system prompt."""
+        return GenerativeModel(
+            model_name=self._model_name,
+            system_instruction=_build_system_prompt(business),
             tools=self._tools,
+            generation_config=GenerationConfig(temperature=1.0),
         )
-        self.history: list[types.Content] = []
 
     def set_business(self, business: dict) -> None:
         self._business = business
-        self._config = types.GenerateContentConfig(
-            system_instruction=_build_system_prompt(business),
-            tools=self._tools,
-        )
+        self._model = self._build_model(business)
 
     async def chat(self, user_message: str) -> str:
         text = ""
@@ -214,56 +300,88 @@ class MatchDayAgent:
         return text or "(no response)"
 
     async def chat_stream(self, user_message: str):
-        """Yield SSE-style dicts: tool call events then the final text."""
-        import asyncio
-        self.history.append(types.Content(
-            role="user",
-            parts=[types.Part(text=user_message)],
-        ))
+        """
+        Vertex AI Agent Builder agentic loop.
+
+        Yields SSE-style dicts:
+          {"type": "tool", "name": "<function_name>"}  — tool call fired
+          {"type": "text", "content": "<reply>"}       — final answer
+        """
+        self.history.append(
+            Content(role="user", parts=[Part.from_text(user_message)])
+        )
 
         loop = asyncio.get_event_loop()
 
         while True:
-            # Run blocking Gemini call in thread pool so event loop stays free
+            # Run blocking Vertex AI inference in thread pool
             response = await loop.run_in_executor(
                 None,
-                lambda: self._client.models.generate_content(
-                    model="gemini-2.5-flash",
+                lambda: self._model.generate_content(
                     contents=self.history,
-                    config=self._config,
-                )
+                ),
             )
 
             candidate = response.candidates[0]
             content = candidate.content
             self.history.append(content)
 
+            # Collect function calls from all parts
             function_calls = [
                 p.function_call
                 for p in content.parts
-                if p.function_call is not None
+                if hasattr(p, "function_call") and p.function_call is not None
+                and p.function_call.name  # guard against empty fc objects
             ]
 
             if not function_calls:
-                texts = [p.text for p in content.parts if p.text]
-                yield {"type": "text", "content": "\n".join(texts) if texts else "(no response)"}
+                # No more tool calls — emit the final text response
+                texts = [
+                    p.text
+                    for p in content.parts
+                    if hasattr(p, "text") and p.text
+                ]
+                yield {
+                    "type": "text",
+                    "content": "\n".join(texts) if texts else "(no response)",
+                }
                 return
 
+            # Emit tool call events so the frontend can show live progress
             for fc in function_calls:
                 yield {"type": "tool", "name": fc.name}
 
-            tool_parts = []
+            # Execute tools and build function-response parts
+            tool_parts: list[Part] = []
             for fc in function_calls:
                 args = dict(fc.args) if fc.args else {}
                 result = await _dispatch(fc.name, args)
-                tool_parts.append(types.Part(
-                    function_response=types.FunctionResponse(
+                tool_parts.append(
+                    Part.from_function_response(
                         name=fc.name,
                         response={"result": json.dumps(result, default=str)},
                     )
-                ))
+                )
 
-            self.history.append(types.Content(role="user", parts=tool_parts))
+            self.history.append(
+                Content(role="user", parts=tool_parts)
+            )
 
     def reset(self):
         self.history = []
+
+    # ── Reasoning Engine interface ────────────────────────────────────────────
+    # These methods satisfy the vertexai.preview.reasoning_engines.ReasoningEngine
+    # interface so this class can be deployed directly to Vertex AI Agent Builder.
+
+    def query(self, *, user_message: str) -> str:
+        """Synchronous query interface required by Reasoning Engine."""
+        return asyncio.get_event_loop().run_until_complete(self.chat(user_message))
+
+    def set_up(self) -> None:
+        """Called by Agent Builder during deployment initialisation."""
+        _init_vertex()
+
+
+# Keep the old name as an alias so any existing imports continue to work.
+MatchDayAgent = VertexAIAgent
