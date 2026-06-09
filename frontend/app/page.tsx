@@ -14,7 +14,7 @@ const SESSION_ID = `session_${Math.random().toString(36).slice(2)}`;
 
 const buildSuggestions = (biz?: BusinessProfile) => [
   { icon: CalendarDays, label: "Match schedule",  prompt: `Which World Cup matches are coming to ${biz?.city ?? "East Rutherford, NJ"} and how big are the crowds expected to be?` },
-  { icon: Megaphone,    label: "Run a campaign",   prompt: `Germany vs Brazil is coming to ${biz?.city ?? "East Rutherford, NJ"} on June 14th. Create and save a social media campaign for ${biz?.name ?? "my business"}.` },
+  { icon: Megaphone,    label: "Run a campaign",   prompt: `Brazil vs England is coming to ${biz?.city ?? "East Rutherford, NJ"} on June 14th. Create and save a social media campaign for ${biz?.name ?? "my business"}.` },
   { icon: Users,        label: "Staffing plan",    prompt: `There's a match at ${biz?.city ?? "East Rutherford, NJ"} this weekend with 80,000 fans. Create and save a full staffing plan for ${biz?.name ?? "my business"}.` },
   { icon: Zap,          label: "Crowd forecast",   prompt: `What's the fan breakdown for the next match in ${biz?.city ?? "East Rutherford, NJ"}? Which nationalities, peak hours, and what should ${biz?.name ?? "my business"} prepare for?` },
   { icon: BookMarked,   label: "Saved items",      prompt: `Show me everything saved for ${biz?.name ?? "my business"} — campaigns, staffing plans, and recommendations.` },
