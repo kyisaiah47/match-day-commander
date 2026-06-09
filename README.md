@@ -1,16 +1,28 @@
-# World Cup Biz AI ⚽
+<div align="center">
 
-> AI agent for local businesses near FIFA World Cup 2026 venues — powered by **Gemini 2.5 Flash** and **MongoDB Atlas**.
+<img src="assets/banner.png" alt="banner" width="100%" />
+
+# ⚽ World Cup Biz AI
+
+**AI agent helping local businesses near FIFA World Cup 2026 venues capitalize on match days**
+
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini%202.5%20Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB%20Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+![Google Cloud](https://img.shields.io/badge/Google%20Cloud%20Run-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge)
 
 **Live:** [worldcupbizai.vercel.app](https://worldcupbizai.vercel.app) · Built for the [Google Cloud Rapid Agent Hackathon](https://googlecloudrapidagent.devpost.com/) — MongoDB Partner Track.
 
----
+</div>
 
-## What It Does
+<br/>
 
 Local businesses near World Cup venues — restaurants, bars, hotels, retail — have a massive revenue opportunity during match days but no system to act on it. World Cup Biz AI is a personalized AI agent that gives them the tools to prepare.
 
-Enter your business details once. The agent tailors everything to you:
+Enter your business details once. The agent tailors everything to you.
+
+## ✨ Features
 
 - **Crowd Intelligence** — match schedules, expected attendance, and fan demographics per venue city from MongoDB Atlas
 - **Campaign Generation** — targeted social media posts, email copy, and SMS offers based on the teams playing and expected crowd
@@ -18,9 +30,7 @@ Enter your business details once. The agent tailors everything to you:
 - **Match Day Notes** — built-in notes sidebar with general and date-specific notes, synced to MongoDB
 - **Persistent Memory** — campaigns and recommendations saved to MongoDB Atlas automatically
 
----
-
-## Architecture
+## 🏗️ Architecture
 
 ```
 Next.js Frontend (Vercel)
@@ -54,9 +64,20 @@ MongoDB Atlas
 
 The agent is orchestrated by **Vertex AI Agent Builder** (Reasoning Engine) and all MongoDB tool calls are routed through the **MongoDB MCP server** over the Model Context Protocol. The agent streams tool call events to the frontend in real time — users see each MongoDB query fire as it happens. Gemini runs in a thread pool executor so the event loop stays free during inference.
 
----
+## 🛠️ Tech Stack
 
-## Running Locally
+| Layer | Technology |
+|---|---|
+| AI | Gemini 2.5 Flash via Vertex AI Agent Builder |
+| Agent Orchestration | Vertex AI Reasoning Engine (Agent Builder) |
+| Backend | Python, FastAPI, Google Cloud Run |
+| Database | MongoDB Atlas via MongoDB MCP Server |
+| MCP | @mongodb-js/mongodb-mcp-server (stdio transport) |
+| Frontend | Next.js 16, Tailwind CSS, shadcn/ui |
+| Hosting | Vercel (frontend), Google Cloud Run (API) |
+| Streaming | Server-Sent Events (SSE) |
+
+## 🚀 Getting Started
 
 ### Backend
 
@@ -88,8 +109,6 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
----
-
 ## Example Prompts
 
 - *"Germany vs Brazil is coming to East Rutherford on June 14th. Create a social media campaign for my restaurant and tell me how many extra staff I need."*
@@ -97,9 +116,7 @@ npm run dev
 - *"There's a match this weekend with 80,000 fans. Give me a full staffing and inventory plan."*
 - *"What's the fan breakdown for the next match in my city? Which nationalities, peak hours, and what should I prepare for?"*
 
----
-
-## Deploy
+## ☁️ Deploy
 
 ### Backend → Google Cloud Run
 
@@ -133,21 +150,6 @@ vercel --prod
 
 Set `NEXT_PUBLIC_API_URL` to your Cloud Run service URL in Vercel environment variables.
 
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| AI | Gemini 2.5 Flash via Vertex AI Agent Builder |
-| Agent Orchestration | Vertex AI Reasoning Engine (Agent Builder) |
-| Backend | Python, FastAPI, Google Cloud Run |
-| Database | MongoDB Atlas via MongoDB MCP Server |
-| MCP | @mongodb-js/mongodb-mcp-server (stdio transport) |
-| Frontend | Next.js 16, Tailwind CSS, shadcn/ui |
-| Hosting | Vercel (frontend), Google Cloud Run (API) |
-| Streaming | Server-Sent Events (SSE) |
-
-## License
+## 📄 License
 
 MIT — see [LICENSE](LICENSE)
